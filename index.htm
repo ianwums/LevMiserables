@@ -418,10 +418,18 @@
           addLog("You order a pint of Guinness. It's oddly emotional.");
           gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
           break;
-        case "union_karaoke":
-          addLog("Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.");
-          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+        case "union_karaoke": {
+          if (gameState.drunk < 3) {
+            addLog("Rockin Ronnie looks you up and down and says you're far too sober to touch the mic. Come back after a few more drinks.");
+          } else if (gameState.drunk > 7) {
+            addLog("Rockin Ronnie sighs, 'You're far too drunk for this,' but puts your song on anyway. You absolutely annihilate it in a way no one will forget.");
+            gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          } else {
+            addLog("Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.");
+            gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          }
           break;
+        }
         case "union_dance_julie":
           addLog("You dance with Julie. It's chaotic but unforgettable.");
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
@@ -435,7 +443,7 @@
             addLog("You order a gloriously beige meal. Future you will have opinions.");
             gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
             gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
-            // You could choose to spend cash here, but spec only requires cash gate.
+            // Optional: you could also clear cash here if you want Nispy to consume it.
           }
           break;
         case "nispy_salt":
