@@ -182,6 +182,60 @@
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    // Simple scorer pools (from current squads)
+    const unitedScorers = [
+      "Bruno Fernandes",
+      "Mason Mount",
+      "Matheus Cunha",
+      "Joshua Zirkzee",
+      "Benjamin Šeško",
+      "Bryan Mbeumo",
+      "Kobbie Mainoo"
+    ];
+
+    const evertonScorers = [
+      "Dominic Calvert-Lewin",
+      "Beto",
+      "Jack Grealish",
+      "Dwight McNeil",
+      "Iliman Ndiaye",
+      "Thierno Barry"
+    ];
+
+    const villaScorers = [
+      "Ollie Watkins",
+      "Leon Bailey",
+      "Moussa Diaby",
+      "John McGinn"
+    ];
+
+    function pickRandom(array) {
+      return array[randInt(0, array.length - 1)];
+    }
+
+    function randomScorer(teamName) {
+      if (teamName === "Manchester United") return pickRandom(unitedScorers);
+      if (teamName === "Everton") return pickRandom(evertonScorers);
+      if (teamName === "Aston Villa") return pickRandom(villaScorers);
+      return "a player from " + teamName;
+    }
+
+    // Queue log lines with a delay between each
+    function queueLogEvents(lines, delayMs, onComplete) {
+      let i = 0;
+      function next() {
+        if (i >= lines.length) {
+          if (onComplete) onComplete();
+          return;
+        }
+        addLog(lines[i]);
+        render();
+        i++;
+        setTimeout(next, delayMs);
+      }
+      next();
+    }
+
     // --- WORLD / LOCATIONS ---
     const locations = {
       "Stockport Road": {
@@ -375,7 +429,7 @@
       }
     };
 
-    // --- MATCH SIMULATION ---
+    // --- MATCH SIMULATION WITH TIMELINE ---
     function simulateMatch() {
       const derbies = [
         {
@@ -392,21 +446,49 @@
 
       const derby = derbies[randInt(0, derbies.length - 1)];
 
-      // First half
+      // First half goals
       const fhHome = randInt(0, 3);
       const fhAway = randInt(0, 3);
+      const firstHalfGoals = [];
+      for (let i = 0; i < fhHome; i++) firstHalfGoals.push({ team: "home" });
+      for (let i = 0; i < fhAway; i++) firstHalfGoals.push({ team: "away" });
+
+      // Shuffle first-half goals a bit
+      firstHalfGoals.sort(() => Math.random() - 0.5);
 
       // Second half goals
       const shHomeGoals = randInt(0, 3);
       const shAwayGoals = randInt(0, 3);
+      const secondHalfGoals = [];
+      for (let i = 0; i < shHomeGoals; i++) secondHalfGoals.push({ team: "home" });
+      for (let i = 0; i < shAwayGoals; i++) secondHalfGoals.push({ team: "away" });
+      secondHalfGoals.sort(() => Math.random() - 0.5);
 
       let homeTotal = fhHome + shHomeGoals;
       let awayTotal = fhAway + shAwayGoals;
       let wentToET = false;
-      let winner = null; // "Manchester United", "Everton", "Aston Villa"
+      let etGoals = [];
+      let winner = null;
 
-      addLog(`Potts and The Devil summon you to The Union to watch ${derby.home} vs ${derby.away} (${derby.name}).`);
-      addLog(`Half time: ${derby.home} ${fhHome}–${fhAway} ${derby.away}.`);
+      const lines = [];
+
+      lines.push(`Potts and The Devil summon you to The Union to watch ${derby.home} vs ${derby.away} (${derby.name}).`);
+
+      // First-half goal announcements
+      firstHalfGoals.forEach((g) => {
+        const teamName = g.team === "home" ? derby.home : derby.away;
+        const scorer = randomScorer(teamName);
+        lines.push(`First half: GOAL for ${teamName}! ${scorer} scores.`);
+      });
+
+      lines.push(`Half time: ${derby.home} ${fhHome}–${fhAway} ${derby.away}.`);
+
+      // Second-half goal announcements
+      secondHalfGoals.forEach((g) => {
+        const teamName = g.team === "home" ? derby.home : derby.away;
+        const scorer = randomScorer(teamName);
+        lines.push(`Second half: GOAL for ${teamName}! ${scorer} finds the net.`);
+      });
 
       if (homeTotal === awayTotal) {
         // Chance to go to extra time if level after 90 minutes
@@ -417,18 +499,34 @@
           const beforeETHome = homeTotal;
           const beforeETAway = awayTotal;
 
+          for (let i = 0; i < etHome; i++) etGoals.push({ team: "home" });
+          for (let i = 0; i < etAway; i++) etGoals.push({ team: "away" });
+          etGoals.sort(() => Math.random() - 0.5);
+
           homeTotal += etHome;
           awayTotal += etAway;
 
-          addLog(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
-          addLog(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+          lines.push(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
+
+          etGoals.forEach((g) => {
+            const teamName = g.team === "home" ? derby.home : derby.away;
+            const scorer = randomScorer(teamName);
+            lines.push(`Extra time: GOAL for ${teamName}! ${scorer} might have won it.`);
+          });
+
+          lines.push(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
         }
       }
 
+      let wentToPens = false;
+      let homePens = 0;
+      let awayPens = 0;
+
       // Penalties if still level after ET or 90 (when we didn't go to ET)
       if (homeTotal === awayTotal) {
-        const homePens = randInt(4, 7);
-        let awayPens = randInt(4, 7);
+        wentToPens = true;
+        homePens = randInt(4, 7);
+        awayPens = randInt(4, 7);
         if (awayPens === homePens) {
           // ensure not a draw in the shootout
           awayPens += (Math.random() < 0.5 ? 1 : -1);
@@ -437,35 +535,44 @@
 
         const homeWins = homePens > awayPens;
         if (!wentToET) {
-          addLog(`After 90 minutes it's still level at ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}. It goes straight to penalties.`);
+          lines.push(`After 90 minutes it's still level at ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}. It goes straight to penalties.`);
         } else {
-          addLog("It's still level after extra time. It goes to penalties.");
+          lines.push("It's still level after extra time. It goes to penalties.");
         }
 
+        lines.push("Penalty shootout: the bar falls silent as each kick is taken...");
+
         if (homeWins) {
-          addLog(`${derby.home} win ${homePens}–${awayPens} on penalties.`);
+          lines.push(`${derby.home} win ${homePens}–${awayPens} on penalties.`);
           winner = derby.home;
         } else {
-          addLog(`${derby.away} win ${awayPens}–${homePens} on penalties.`);
+          lines.push(`${derby.away} win ${awayPens}–${homePens} on penalties.`);
           winner = derby.away;
         }
       } else {
         if (wentToET) {
-          addLog(`Full time after extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+          lines.push(`Full time after extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
         } else {
-          addLog(`Full time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+          lines.push(`Full time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
         }
         winner = homeTotal > awayTotal ? derby.home : derby.away;
       }
 
-      // Reactions from Potts and The Devil
+      // Reactions from Potts and The Devil (as log lines)
       if (winner === "Everton") {
-        addLog("Everton win! Potts is elated and announces he's off home to roast a chicken.");
-        // no drunk change
+        lines.push("Everton win! Potts is elated and announces he's off home to roast a chicken.");
       } else if (winner === "Manchester United") {
-        addLog("Manchester United win! The Devil is in his element and buys you a Guinness.");
-        gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
+        lines.push("Manchester United win! The Devil is in his element and buys you a Guinness.");
       }
+
+      // Play the timeline with delays, then apply drunk consequences
+      queueLogEvents(lines, 2000, () => {
+        if (winner === "Manchester United") {
+          gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
+          checkForBlackout();
+          render();
+        }
+      });
     }
 
     // --- RANDOM EVENTS ---
@@ -478,21 +585,24 @@
       if (roll < 0.05 && current !== "The Union") {
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
+        render();
       }
       // ~5% Potts (only if not already in Levy Bakery)
       else if (roll < 0.10 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
+        render();
       }
       // ~5% wife text (can always happen)
       else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
-        gameState.wifeWantsQuorn = true;
       }
       // ~5% chance Potts & The Devil summon you to The Union for a match (only if not already there)
       else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
+        render();
         simulateMatch();
+        return; // match will drive its own log updates
       }
     }
 
@@ -604,7 +714,7 @@
             addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
           }
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
-          gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+          // no impact on drunk level
           break;
 
         // ATM
