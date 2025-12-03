@@ -223,9 +223,9 @@
           |_____________________________________|
 
    The pub is loud but comforting. Condensation on windows, pints on every table,
-   and someone definitely singing badly at the back.
+   and Rockin Ronnie guarding the karaoke queue like a dragon.
         `,
-        description: "Sticky carpet, familiar faces, and the comforting whiff of spilt Guinness. The DJ is queueing up karaoke.",
+        description: "Sticky carpet, familiar faces, and the comforting whiff of spilt Guinness. Rockin Ronnie is queueing up karaoke.",
         actions: [
           { label: "Order a pint of Guinness", type: "action", id: "union_guinness" },
           { label: "Sing a song on karaoke", type: "action", id: "union_karaoke" },
@@ -394,7 +394,6 @@
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
       }
-      // render is handled by caller
     }
 
     // --- BLACKOUT LOGIC ---
@@ -409,7 +408,6 @@
       gameState.location = "Home";
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
-      // render handled by caller
     }
 
     // --- ACTION HANDLERS ---
@@ -421,7 +419,7 @@
           gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
           break;
         case "union_karaoke":
-          addLog("You belt out a karaoke classic. Some people cheer. Others look concerned.");
+          addLog("Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.");
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
         case "union_dance_julie":
@@ -429,14 +427,19 @@
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
 
-        // NISPY (food reduces drunk by 3)
+        // NISPY (food reduces drunk by 3, now needs cash)
         case "nispy_meal":
-          addLog("You order a gloriously beige meal. Future you will have opinions.");
-          gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
-          gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+          if (!gameState.hasCash) {
+            addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
+          } else {
+            addLog("You order a gloriously beige meal. Future you will have opinions.");
+            gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
+            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+            // You could choose to spend cash here, but spec only requires cash gate.
+          }
           break;
         case "nispy_salt":
-          addLog("You ask for extra salt. They hand you a sachet the size of a small pillow.");
+          addLog("The staff glare and say, 'The food is salty enough already, NO WAY!'");
           break;
 
         // ISCA
@@ -457,7 +460,7 @@
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
-        // LEVY BAKERY (food reduces drunk by 3, cash gate)
+        // LEVY BAKERY
         case "levy_mixed":
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
@@ -481,7 +484,7 @@
           }
           break;
 
-        // TESCO (Quorn reduces drunk, with wife quest)
+        // TESCO
         case "tesco_kitchen_roll":
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
