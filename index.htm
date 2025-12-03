@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lev Miserables</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #050608;
+      color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .game-container {
+      background: #0b0d12;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 900px;
+      width: 95%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .title {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+      text-align: center;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #f2f2f2;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 14px;
+      color: #aaa;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      color: #c9c9c9;
+    }
+
+    .ascii-art {
+      background: #050608;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      white-space: pre;
+      font-family: "Fira Code", "Cascadia Mono", Consolas, monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .description {
+      margin-bottom: 12px;
+      line-height: 1.5;
+      font-size: 0.98rem;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .choices button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #444;
+      background: #151824;
+      color: #f5f5f5;
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      transition:
+        transform 0.07s ease,
+        box-shadow 0.07s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+    }
+
+    .choices button:hover {
+      background: #22263a;
+      border-color: #666;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .choices button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .log {
+      border-top: 1px solid #222;
+      padding-top: 8px;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      max-height: 120px;
+      overflow-y: auto;
+      color: #bfbfbf;
+    }
+
+    .log-entry {
+      margin-bottom: 2px;
+    }
+
+    .hint {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: #888;
+      text-align: right;
+    }
+
+    @media (max-width: 600px) {
+      .ascii-art { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="title">LEV MISERABLES</div>
+    <div class="subtitle">A night out on Stockport Road</div>
+
+    <div class="status-bar">
+      <div><strong>Location:</strong> <span id="statusLocation"></span></div>
+      <div><strong>Cash:</strong> <span id="statusCash"></span></div>
+    </div>
+
+    <pre id="asciiArt" class="ascii-art"></pre>
+    <div id="description" class="description"></div>
+
+    <div id="choices" class="choices"></div>
+
+    <div id="log" class="log"></div>
+    <div class="hint">Press 1–9 to choose an option.</div>
+  </div>
+
+  <script>
+    // --- GAME STATE ---
+    const gameState = {
+      location: "Stockport Road",
+      hasCash: false,
+      log: []
+    };
+
+    // --- WORLD / LOCATIONS ---
+    const locations = {
+      "Stockport Road": {
+        ascii: String.raw`
+      _________  _              _                       _ 
+     /  _____/ | |            | |                     | |
+    |  (___  __| |_ ___   ___ | |_   _ __ ___   ___   | |
+     \___  \|__   _/ _ \ / _ \| __| | '_ ' _ \ / _ \  | |
+     ____)  | | || (_) | (_) | |_  | | | | | |  __/  |_|
+    |______/   \__\___/ \___/ \__| |_| |_| |_|\___|  (_)
+
+    A chilly night on Stockport Road. Neon, traffic, and the faint
+    promise of terrible decisions. From here you can see:
+
+      - ISCA (wine bar)
+      - THE UNION (pub)
+      - LEVY BAKERY (kebabs)
+      - NISPY (fried chicken)
+      - TESCO (supermarket)
+      - ATM (cash machine)
+        `,
+        description: "You stand on Stockport Road, poised between greatness and shame. Where to first?",
+        actions: [
+          { label: "Go to The Union (Pub)", type: "move", target: "The Union" },
+          { label: "Go to Nispy (Fried chicken shop)", type: "move", target: "Nispy" },
+          { label: "Go to Isca (Wine bar)", type: "move", target: "Isca" },
+          { label: "Go to Levy Bakery (Kebabs)", type: "move", target: "Levy Bakery" },
+          { label: "Go to Tesco (Supermarket)", type: "move", target: "Tesco" },
+          { label: "Go to ATM (Cash machine)", type: "move", target: "ATM" }
+        ]
+      },
+
+      "The Union": {
+        ascii: String.raw`
+           _______________________
+          |   THE UNION (PUB)    |
+          |----------------------|
+          |  [   GUINNESS   ]    |
+          |   ___   ___   ___    |
+          |  |___| |___| |___|   |
+          |                      |
+          |   ♪  KARAOKE  ♪      |
+          |______________________|
+        `,
+        description: "Sticky carpet, familiar faces, the comforting whiff of spilt Guinness. The DJ is queueing up karaoke.",
+        actions: [
+          { label: "Order a pint of Guinness", type: "action", id: "union_guinness" },
+          { label: "Sing a song on karaoke", type: "action", id: "union_karaoke" },
+          { label: "Dance with Julie", type: "action", id: "union_dance_julie" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Nispy": {
+        ascii: String.raw`
+           _   _       _           
+          | \ | | ___ (_)___  _ __ 
+          |  \| |/ _ \| / __|| '__|
+          | |\  |  __/| \__ \| |   
+          |_| \_|\___||_|___/|_|   
+
+           NISPY FRIED CHICKEN
+
+           [ BARGAIN BUCKETS ]
+           [    WINGS & THINGS ]
+        `,
+        description: "The warm glow of the heat lamps. The smell of fried everything. A man in front of you is arguing about sauce.",
+        actions: [
+          { label: "Order a meal", type: "action", id: "nispy_meal" },
+          { label: "Ask for extra salt", type: "action", id: "nispy_salt" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Isca": {
+        ascii: String.raw`
+           ___
+          /___\    ISCA
+         (|🍷|)  WINE  BAR
+          \___/
+
+         Chalkboard menus, candlelight,
+         people discussing natural wine and politics.
+        `,
+        description: "Soft lighting, clinking glasses, and someone saying the word 'minerality' unironically.",
+        actions: [
+          { label: "Order a glass of fizz", type: "action", id: "isca_fizz" },
+          { label: "Order a glass of red", type: "action", id: "isca_red" },
+          { label: "Order a glass of white", type: "action", id: "isca_white" },
+          { label: "Order a cheese board", type: "action", id: "isca_cheese" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Levy Bakery": {
+        ascii: String.raw`
+           __    _                  _             
+          / /   | |                | |            
+         / /    | | ___  _   _  ___| | ___  _ __  
+        / /     | |/ _ \| | | |/ __| |/ _ \| '_ \ 
+       / /   _  | | (_) | |_| | (__| | (_) | | | |
+      /_/   (_) |_|\___/ \__,_|\___|_|\___/|_| |_|
+
+          LEVY BAKERY - SAMOON & KEBABS
+        `,
+        description: "The counter is lined with glorious Samoon bread. The grill sizzles. This is the point of no return.",
+        actions: [
+          { label: "Order a mixed Samoon", type: "action", id: "levy_mixed" },
+          { label: "Order a Falafel Samoon", type: "action", id: "levy_falafel" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Tesco": {
+        ascii: String.raw`
+          _______  _______  _______  _______ 
+         |__   __||__   __||__   __||__   __|
+            | |      | |      | |      | |   
+         T  | |  E   | |  S   | |  C  | |  O
+
+          It's your friendly local Tesco.
+        `,
+        description: "Fluorescent lighting, aisles of mild chaos, and a queue of people buying exactly three items.",
+        actions: [
+          { label: "Buy kitchen roll", type: "action", id: "tesco_kitchen_roll" },
+          { label: "Buy Quorn chicken nuggies", type: "action", id: "tesco_quorn" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "ATM": {
+        ascii: String.raw`
+           ___________________
+          |  ____   ____     |
+          | | __ | | __ |    |
+          | ||__|| ||__||    |
+          | |____| |____|    |
+          |   ATM MACHINE    |
+          |__________________|
+        `,
+        description: "A lonely ATM hums softly, ready to enable more questionable purchases.",
+        actions: [
+          { label: "Withdraw money", type: "action", id: "atm_withdraw" },
+          { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      }
+    };
+
+    // --- ACTION HANDLERS ---
+    function performAction(actionId) {
+      switch (actionId) {
+        // UNION
+        case "union_guinness":
+          addLog("You order a pint of Guinness. It's oddly emotional.");
+          break;
+        case "union_karaoke":
+          addLog("You belt out a karaoke classic. Some people cheer. Others look concerned.");
+          break;
+        case "union_dance_julie":
+          addLog("You dance with Julie. It's chaotic but unforgettable.");
+          break;
+
+        // NISPY
+        case "nispy_meal":
+          addLog("You order a gloriously beige meal. Future you will have opinions.");
+          break;
+        case "nispy_salt":
+          addLog("You ask for extra salt. They hand you a sachet the size of a small pillow.");
+          break;
+
+        // ISCA
+        case "isca_fizz":
+          addLog("You sip a glass of fizz and briefly consider moving to Paris.");
+          break;
+        case "isca_red":
+          addLog("You savour a glass of red and nod like you understand tannins.");
+          break;
+        case "isca_white":
+          addLog("You enjoy a crisp white that 'really opens up on the second sip'. Allegedly.");
+          break;
+        case "isca_cheese":
+          addLog("You order a cheese board. It briefly silences the table.");
+          break;
+
+        // LEVY BAKERY (cash gate!)
+        case "levy_mixed":
+          if (!gameState.hasCash) {
+            addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
+          } else {
+            addLog("You buy a mixed Samoon. This is the crescendo of the night.");
+          }
+          break;
+        case "levy_falafel":
+          if (!gameState.hasCash) {
+            addLog("You try to order a Falafel Samoon but realise you have no cash. Levy Bakery waits, but your wallet does not.");
+          } else {
+            addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
+          }
+          break;
+
+        // TESCO
+        case "tesco_kitchen_roll":
+          addLog("You buy kitchen roll. Responsible, if not glamorous.");
+          break;
+        case "tesco_quorn":
+          addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
+          break;
+
+        // ATM
+        case "atm_withdraw":
+          gameState.hasCash = true;
+          addLog("You withdraw some cash. You are now Samoon-enabled.");
+          break;
+
+        default:
+          addLog("You do something indescribable. (Action not implemented.)");
+      }
+
+      render();
+    }
+
+    // --- RENDERING ---
+    function render() {
+      const loc = locations[gameState.location];
+
+      const asciiEl = document.getElementById("asciiArt");
+      const descEl = document.getElementById("description");
+      const choicesEl = document.getElementById("choices");
+      const statusLocationEl = document.getElementById("statusLocation");
+      const statusCashEl = document.getElementById("statusCash");
+      const logEl = document.getElementById("log");
+
+      statusLocationEl.textContent = gameState.location;
+      statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
+
+      asciiEl.textContent = loc.ascii;
+      descEl.textContent = loc.description;
+
+      choicesEl.innerHTML = "";
+      loc.actions.forEach((action, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = (index + 1) + ". " + action.label;
+        btn.addEventListener("click", () => handleChoice(index));
+        choicesEl.appendChild(btn);
+      });
+
+      logEl.innerHTML = "";
+      gameState.log.slice(-8).forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "log-entry";
+        div.textContent = "• " + entry;
+        logEl.appendChild(div);
+      });
+    }
+
+    function handleChoice(index) {
+      const loc = locations[gameState.location];
+      const action = loc.actions[index];
+      if (!action) return;
+
+      if (action.type === "move") {
+        gameState.location = action.target;
+        addLog("You head to " + action.target + ".");
+        render();
+      } else if (action.type === "action") {
+        performAction(action.id);
+      }
+    }
+
+    function addLog(text) {
+      gameState.log.push(text);
+    }
+
+    // Keyboard shortcuts 1–9
+    document.addEventListener("keydown", (event) => {
+      if (!/^[1-9]$/.test(event.key)) return;
+      const choiceIndex = parseInt(event.key, 10) - 1;
+      handleChoice(choiceIndex);
+    });
+
+    // Start game
+    window.addEventListener("load", () => {
+      addLog("You step out onto Stockport Road. The night begins.");
+      render();
+    });
+  </script>
+</body>
+</html>
