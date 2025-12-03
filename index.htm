@@ -342,6 +342,26 @@
       padding: 20px 40px;
     }
 
+    /* Big red Taccy Vom button */
+    .taccy-button {
+      background: #b71c1c;
+      border-color: #ef5350;
+      color: #fff;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .taccy-button:hover {
+      background: #d32f2f;
+      border-color: #ff8a80;
+      box-shadow: 0 0 10px rgba(255, 82, 82, 0.6);
+    }
+
+    .taccy-button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
     @media (max-width: 800px) {
       .layout {
         flex-direction: column;
@@ -974,7 +994,7 @@
 
       setTimeout(() => {
         overlay.style.display = "none";
-        addLog("That's disgusting.");
+        addLog("That was disgusting! But at least we can eat something now.");
         gameState.satiation = 0;  // drunk unchanged
         render();
       }, 3000);
@@ -1284,16 +1304,16 @@
 
       // Choices
       choicesEl.innerHTML = "";
-      const actionsToShow = [...loc.actions];
+      let actionsToShow = [...loc.actions];
 
-      // Conditionally add Taccy Vom Vom option (global special)
+      // Conditionally add Taccy Vom Vom option (global special) at the TOP
       if (
         gameState.location !== "Home" &&
         gameState.satiation === 10 &&
         gameState.drunk >= 5
       ) {
-        actionsToShow.push({
-          label: "Taccy Vom Vom",
+        actionsToShow.unshift({
+          label: "Taccy Vom?",
           type: "action",
           id: "taccy_vom_vom"
         });
@@ -1302,6 +1322,9 @@
       actionsToShow.forEach((action, index) => {
         const btn = document.createElement("button");
         btn.textContent = (index + 1) + ". " + action.label;
+        if (action.id === "taccy_vom_vom") {
+          btn.classList.add("taccy-button");
+        }
         btn.addEventListener("click", () => handleChoice(actionsToShow, index));
         choicesEl.appendChild(btn);
       });
@@ -1340,16 +1363,7 @@
       });
     }
 
-    function handleChoice(actionsListOrIndex, maybeIndex) {
-      let actionsList, index;
-      if (Array.isArray(actionsListOrIndex)) {
-        actionsList = actionsListOrIndex;
-        index = maybeIndex;
-      } else {
-        // keyboard path, will be overridden below in keyboard handler
-        return;
-      }
-
+    function handleChoice(actionsList, index) {
       const currentLocationName = gameState.location;
       const action = actionsList[index];
       if (!action) return;
@@ -1393,13 +1407,14 @@
 
       const loc = locations[gameState.location];
       let actionsToShow = [...loc.actions];
+
       if (
         gameState.location !== "Home" &&
         gameState.satiation === 10 &&
         gameState.drunk >= 5
       ) {
-        actionsToShow.push({
-          label: "Taccy Vom Vom",
+        actionsToShow.unshift({
+          label: "Taccy Vom?",
           type: "action",
           id: "taccy_vom_vom"
         });
