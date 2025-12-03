@@ -178,6 +178,10 @@
       return Math.max(min, Math.min(max, value));
     }
 
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
     // --- WORLD / LOCATIONS ---
     const locations = {
       "Stockport Road": {
@@ -371,21 +375,124 @@
       }
     };
 
+    // --- MATCH SIMULATION ---
+    function simulateMatch() {
+      const derbies = [
+        {
+          home: "Manchester United",
+          away: "Everton",
+          name: "The Sherbets Derby"
+        },
+        {
+          home: "Manchester United",
+          away: "Aston Villa",
+          name: "The Scrumpuss Derby"
+        }
+      ];
+
+      const derby = derbies[randInt(0, derbies.length - 1)];
+
+      // First half
+      const fhHome = randInt(0, 3);
+      const fhAway = randInt(0, 3);
+
+      // Second half goals
+      const shHomeGoals = randInt(0, 3);
+      const shAwayGoals = randInt(0, 3);
+
+      let homeTotal = fhHome + shHomeGoals;
+      let awayTotal = fhAway + shAwayGoals;
+      let wentToET = false;
+      let winner = null; // "Manchester United", "Everton", "Aston Villa"
+
+      addLog(`Potts and The Devil summon you to The Union to watch ${derby.home} vs ${derby.away} (${derby.name}).`);
+      addLog(`Half time: ${derby.home} ${fhHome}–${fhAway} ${derby.away}.`);
+
+      if (homeTotal === awayTotal) {
+        // Chance to go to extra time if level after 90 minutes
+        if (Math.random() < 0.6) {
+          wentToET = true;
+          const etHome = randInt(0, 2);
+          const etAway = randInt(0, 2);
+          const beforeETHome = homeTotal;
+          const beforeETAway = awayTotal;
+
+          homeTotal += etHome;
+          awayTotal += etAway;
+
+          addLog(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
+          addLog(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+        }
+      }
+
+      // Penalties if still level after ET or 90 (when we didn't go to ET)
+      if (homeTotal === awayTotal) {
+        const homePens = randInt(4, 7);
+        let awayPens = randInt(4, 7);
+        if (awayPens === homePens) {
+          // ensure not a draw in the shootout
+          awayPens += (Math.random() < 0.5 ? 1 : -1);
+          if (awayPens < 0) awayPens = 0;
+        }
+
+        const homeWins = homePens > awayPens;
+        if (!wentToET) {
+          addLog(`After 90 minutes it's still level at ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}. It goes straight to penalties.`);
+        } else {
+          addLog("It's still level after extra time. It goes to penalties.");
+        }
+
+        if (homeWins) {
+          addLog(`${derby.home} win ${homePens}–${awayPens} on penalties.`);
+          winner = derby.home;
+        } else {
+          addLog(`${derby.away} win ${awayPens}–${homePens} on penalties.`);
+          winner = derby.away;
+        }
+      } else {
+        if (wentToET) {
+          addLog(`Full time after extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+        } else {
+          addLog(`Full time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+        }
+        winner = homeTotal > awayTotal ? derby.home : derby.away;
+      }
+
+      // Reactions from Potts and The Devil
+      if (winner === "Everton") {
+        addLog("Everton win! Potts is elated and announces he's off home to roast a chicken.");
+        // no drunk change
+      } else if (winner === "Manchester United") {
+        addLog("Manchester United win! The Devil is in his element and buys you a Guinness.");
+        gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
+      }
+    }
+
     // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
       if (gameState.location === "Home") return; // no chaos in bed
       const roll = Math.random();
+      const current = gameState.location;
 
-      // ~5% devil, ~5% Potts, ~5% wife text
-      if (roll < 0.05) {
-        addLog("You bump into the devil, who grins and steers you firmly towards The Union.");
+      // ~5% Devil (only if not already in The Union)
+      if (roll < 0.05 && current !== "The Union") {
+        addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
-      } else if (roll < 0.10) {
+      }
+      // ~5% Potts (only if not already in Levy Bakery)
+      else if (roll < 0.10 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
-      } else if (roll < 0.15) {
+      }
+      // ~5% wife text (can always happen)
+      else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
+      }
+      // ~5% chance Potts & The Devil summon you to The Union for a match (only if not already there)
+      else if (roll < 0.20 && current !== "The Union") {
+        gameState.location = "The Union";
+        simulateMatch();
       }
     }
 
@@ -428,7 +535,7 @@
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
 
-        // NISPY (food reduces drunk by 3, now needs cash)
+        // NISPY (food reduces drunk by 3, needs & spends cash)
         case "nispy_meal":
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
@@ -436,7 +543,7 @@
             addLog("You order a gloriously beige meal. Future you will have opinions.");
             gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
             gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
-            // Optional: you could also clear cash here if you want Nispy to consume it.
+            gameState.hasCash = false; // spend the money
           }
           break;
         case "nispy_salt":
