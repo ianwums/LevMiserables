@@ -6,42 +6,95 @@
   <style>
     * { box-sizing: border-box; }
 
+    :root {
+      --bg: #050608;
+      --text: #f5f5f5;
+      --card-bg: #0b0d12;
+      --border: #333;
+      --accent-soft: #151824;
+      --accent-soft-hover: #22263a;
+      --muted: #aaa;
+      --muted-strong: #c9c9c9;
+      --log-border: #222;
+    }
+
+    body.light {
+      --bg: #f4f4f4;
+      --text: #111;
+      --card-bg: #ffffff;
+      --border: #ccc;
+      --accent-soft: #e9ecf8;
+      --accent-soft-hover: #dde2f8;
+      --muted: #666;
+      --muted-strong: #333;
+      --log-border: #ccc;
+    }
+
     body {
       margin: 0;
       padding: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #050608;
-      color: #f5f5f5;
+      background: var(--bg);
+      color: var(--text);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .game-container {
-      background: #0b0d12;
-      border: 1px solid #333;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px;
       max-width: 1100px;
       width: 95%;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
     }
 
     .title {
       font-size: 1.6rem;
-      margin-bottom: 4px;
-      text-align: center;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #f2f2f2;
+      color: var(--text);
     }
 
     .subtitle {
       font-size: 0.9rem;
-      text-align: center;
-      margin-bottom: 14px;
-      color: #aaa;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    #themeToggle {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.07s ease;
+    }
+
+    #themeToggle:hover {
+      background: var(--accent-soft-hover);
+      border-color: var(--muted);
+      transform: translateY(-1px);
+    }
+
+    #themeToggle:active {
+      transform: translateY(0);
     }
 
     .status-bar {
@@ -50,7 +103,7 @@
       gap: 10px;
       font-size: 0.85rem;
       margin-bottom: 10px;
-      color: #c9c9c9;
+      color: var(--muted-strong);
     }
 
     .status-bar > div {
@@ -75,7 +128,7 @@
     }
 
     .ascii-art {
-      background: #050608;
+      background: var(--bg);
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 14px;
@@ -83,6 +136,27 @@
       font-family: "Fira Code", "Cascadia Mono", Consolas, monospace;
       font-size: 13px;
       overflow-x: auto;
+    }
+
+    .karaoke-screen {
+      display: none;
+      margin-bottom: 10px;
+      width: 100%;
+      max-width: 260px;
+      aspect-ratio: 1 / 1;
+      background: #111;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.8rem;
+      padding: 10px;
+    }
+
+    body.light .karaoke-screen {
+      background: #fdfdfd;
     }
 
     .description {
@@ -98,12 +172,13 @@
       margin-bottom: 10px;
     }
 
-    .choices button {
+    .choices button,
+    .karaoke-choices button {
       padding: 10px 14px;
       border-radius: 10px;
-      border: 1px solid #444;
-      background: #151824;
-      color: #f5f5f5;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      color: var(--text);
       font-size: 0.95rem;
       text-align: left;
       cursor: pointer;
@@ -114,33 +189,56 @@
         border-color 0.2s ease;
     }
 
-    .choices button:hover {
-      background: #22263a;
-      border-color: #666;
-      box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+    .choices button:hover,
+    .karaoke-choices button:hover {
+      background: var(--accent-soft-hover);
+      border-color: var(--muted);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
       transform: translateY(-1px);
     }
 
-    .choices button:active {
+    .choices button:active,
+    .karaoke-choices button:active {
       transform: translateY(0);
       box-shadow: none;
     }
 
+    .karaoke-choices {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background: rgba(0,0,0,0.15);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    body.light .karaoke-choices {
+      background: rgba(255,255,255,0.6);
+    }
+
+    .karaoke-choices-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
     .log {
-      border-left: 1px solid #222;
+      border-left: 1px solid var(--log-border);
       padding-left: 10px;
       margin-left: 4px;
       font-size: 0.85rem;
       flex: 1;
       overflow-y: auto;
-      color: #bfbfbf;
+      color: var(--muted-strong);
     }
 
     .log-title {
       font-size: 0.85rem;
       font-weight: 600;
       margin-bottom: 4px;
-      color: #ddd;
+      color: var(--muted-strong);
     }
 
     .log-entry {
@@ -150,8 +248,31 @@
     .hint {
       margin-top: 6px;
       font-size: 0.78rem;
-      color: #888;
+      color: var(--muted);
       text-align: right;
+    }
+
+    .summary {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--log-border);
+      font-size: 0.8rem;
+      color: var(--muted-strong);
+    }
+
+    .summary-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .summary-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .summary-list li {
+      margin-bottom: 2px;
     }
 
     @media (max-width: 800px) {
@@ -171,13 +292,18 @@
 </head>
 <body>
   <div class="game-container">
-    <div class="title">LEV MISERABLES</div>
-    <div class="subtitle">A Drinking Game on Stockport Road</div>
+    <div class="header-row">
+      <div>
+        <div class="title">LEV MISERABLES</div>
+        <div class="subtitle">A Drinking Game</div>
+      </div>
+      <button id="themeToggle">Switch to Light Mode</button>
+    </div>
 
     <div class="status-bar">
       <div><strong>Location:</strong> <span id="statusLocation"></span></div>
       <div><strong>Cash:</strong> <span id="statusCash"></span></div>
-      <div><strong>Card:</strong> <span id="statusCard"></span></div>
+      <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
       <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
       <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
     </div>
@@ -185,14 +311,21 @@
     <div class="layout">
       <div class="main-panel">
         <pre id="asciiArt" class="ascii-art"></pre>
+        <div id="karaokeScreen" class="karaoke-screen"></div>
         <div id="description" class="description"></div>
         <div id="choices" class="choices"></div>
+        <div id="karaokeChoices" class="karaoke-choices"></div>
       </div>
 
       <div class="log-panel">
         <div class="log-title">Action Log</div>
         <div id="log" class="log"></div>
         <div class="hint">Press 1–9 to choose an option.</div>
+
+        <div class="summary">
+          <div class="summary-title">Session Summary</div>
+          <ul class="summary-list" id="sessionSummary"></ul>
+        </div>
       </div>
     </div>
   </div>
@@ -210,8 +343,27 @@
       satiation: 0,
       eatenSamoon: false,
       wifeWantsQuorn: false,
-      log: []
+      log: [],
+      // extra tracking for summary
+      drinksCount: 0,
+      foodCount: 0,
+      matchesWatched: 0,
+      tipsyWarned: false,
+      // karaoke state
+      karaokeChoosingSong: false
     };
+
+    const karaokeSongs = [
+      "THE SMITHS - GIRLFRIEND IN A COMA",
+      "ROBBIE WILLIAMS - ROCK DJ",
+      "BRUCE SPRINGSTEEN - BORN TO RUN",
+      "NANCY SINATRA - BOOTS",
+      "BILLY JOEL - WE DIDN'T START THE FIRE",
+      "LORDE - GREEN LIGHT",
+      "RONAN KEATING - ROLLERCOASTER",
+      "DAVID BOWIE - BLACKSTAR",
+      "QUEEN (FEAT DAVID BOWIE) - UNDER PRESSURE"
+    ];
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -219,6 +371,10 @@
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pickRandom(array) {
+      return array[randInt(0, array.length - 1)];
     }
 
     // Simple scorer pools
@@ -248,15 +404,34 @@
       "John McGinn"
     ];
 
-    function pickRandom(array) {
-      return array[randInt(0, array.length - 1)];
-    }
-
     function randomScorer(teamName) {
       if (teamName === "Manchester United") return pickRandom(unitedScorers);
       if (teamName === "Everton") return pickRandom(evertonScorers);
       if (teamName === "Aston Villa") return pickRandom(villaScorers);
       return "a player from " + teamName;
+    }
+
+    // --- DRUNK HELPERS ---
+    function checkDrunkState() {
+      if (gameState.drunk >= 5 && !gameState.tipsyWarned) {
+        addLog("You are feeling tipsy, might it be time to eat something?");
+        gameState.tipsyWarned = true;
+      }
+      if (gameState.drunk >= 10 && gameState.location !== "Home") {
+        blackoutToBed();
+      }
+    }
+
+    function setDrunk(newValue) {
+      gameState.drunk = clamp(newValue, 0, 10);
+      checkDrunkState();
+    }
+
+    function changeDrunk(delta) {
+      if (delta > 0) {
+        gameState.drinksCount += 1;
+      }
+      setDrunk(gameState.drunk + delta);
     }
 
     // Queue log lines with a delay between each
@@ -485,7 +660,6 @@
 
       const derby = derbies[randInt(0, derbies.length - 1)];
 
-      // First half goals
       const fhHome = randInt(0, 3);
       const fhAway = randInt(0, 3);
       const firstHalfGoals = [];
@@ -493,7 +667,6 @@
       for (let i = 0; i < fhAway; i++) firstHalfGoals.push({ team: "away" });
       firstHalfGoals.sort(() => Math.random() - 0.5);
 
-      // Second half goals
       const shHomeGoals = randInt(0, 3);
       const shAwayGoals = randInt(0, 3);
       const secondHalfGoals = [];
@@ -511,7 +684,6 @@
 
       lines.push(`Potts and The Devil summon you to The Union to watch ${derby.home} vs ${derby.away} (${derby.name}).`);
 
-      // First-half goals
       firstHalfGoals.forEach((g) => {
         const teamName = g.team === "home" ? derby.home : derby.away;
         const scorer = randomScorer(teamName);
@@ -520,7 +692,6 @@
 
       lines.push(`Half time: ${derby.home} ${fhHome}–${fhAway} ${derby.away}.`);
 
-      // Second half goals
       secondHalfGoals.forEach((g) => {
         const teamName = g.team === "home" ? derby.home : derby.away;
         const scorer = randomScorer(teamName);
@@ -528,7 +699,6 @@
       });
 
       if (homeTotal === awayTotal) {
-        // Chance to go to extra time if level after 90 minutes
         if (Math.random() < 0.6) {
           wentToET = true;
           const etHome = randInt(0, 2);
@@ -555,13 +725,10 @@
         }
       }
 
-      let wentToPens = false;
       let homePens = 0;
       let awayPens = 0;
 
-      // Penalties if still level
       if (homeTotal === awayTotal) {
-        wentToPens = true;
         homePens = randInt(4, 7);
         awayPens = randInt(4, 7);
         if (awayPens === homePens) {
@@ -594,7 +761,6 @@
         winner = homeTotal > awayTotal ? derby.home : derby.away;
       }
 
-      // Reactions
       if (winner === "Everton") {
         lines.push("Everton win! Potts is elated and announces he's off home to roast a chicken.");
       } else if (winner === "Manchester United") {
@@ -603,11 +769,11 @@
         lines.push("Aston Villa win! Your wife turns up at The Union and buys you a Guinness.");
       }
 
-      // Play the timeline, then apply drunk consequences
+      gameState.matchesWatched += 1;
+
       queueLogEvents(lines, 2000, () => {
         if (winner === "Manchester United" || winner === "Aston Villa") {
-          gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
-          checkForBlackout();
+          changeDrunk(2);
           render();
         }
       });
@@ -629,6 +795,7 @@
         render();
       } else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
+        gameState.wifeWantsQuorn = true;
       } else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
         render();
@@ -638,17 +805,50 @@
     }
 
     // --- BLACKOUT LOGIC ---
-    function checkForBlackout() {
-      if (gameState.drunk >= 10 && gameState.location !== "Home") {
-        blackoutToBed();
-      }
-    }
-
     function blackoutToBed() {
       gameState.drunk = 10;
       gameState.location = "Home";
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
+    }
+
+    // --- KARAOKE FLOW ---
+    function startKaraokeSongSelection() {
+      if (gameState.location !== "The Union") return;
+      gameState.karaokeChoosingSong = true;
+      addLog("Rockin Ronnie slides the battered karaoke song binder towards you.");
+      render();
+    }
+
+    function chooseKaraokeSong(songTitle) {
+      gameState.karaokeChoosingSong = false;
+
+      // Rockin Ronnie commentary based on drunk level
+      if (gameState.drunk > 7) {
+        addLog(`You pick "${songTitle}". Rockin Ronnie sighs, 'You're far too drunk for this,' but cues it up anyway.`);
+      } else {
+        addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
+      }
+
+      changeDrunk(1);
+
+      // Show song on TV screen with notes for 5 seconds
+      const screen = document.getElementById("karaokeScreen");
+      screen.style.display = "flex";
+      screen.textContent = `📺 ♪ ${songTitle} ♪`;
+
+      render(); // update log and hide song list
+
+      setTimeout(() => {
+        screen.style.display = "none";
+        const crowdLikesIt = Math.random() < 0.5;
+        if (crowdLikesIt) {
+          addLog("The crowd whoops and cheers. For tonight, you're a star.");
+        } else {
+          addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
+        }
+        render();
+      }, 5000);
     }
 
     // --- ACTION HANDLERS ---
@@ -657,23 +857,18 @@
         // UNION
         case "union_guinness":
           addLog("You order a pint of Guinness. It's oddly emotional.");
-          gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
+          changeDrunk(2);
           break;
-        case "union_karaoke": {
+        case "union_karaoke":
           if (gameState.drunk < 3) {
             addLog("Rockin Ronnie looks you up and down and says you're far too sober to touch the mic. Come back after a few more drinks.");
-          } else if (gameState.drunk > 7) {
-            addLog("Rockin Ronnie sighs, 'You're far too drunk for this,' but puts your song on anyway. You absolutely annihilate it in a way no one will forget.");
-            gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           } else {
-            addLog("Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.");
-            gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+            startKaraokeSongSelection();
           }
           break;
-        }
         case "union_dance_julie":
           addLog("You dance with Julie. It's chaotic but unforgettable.");
-          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          changeDrunk(1);
           break;
 
         // NISPY
@@ -682,8 +877,9 @@
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
           } else {
             addLog("You order a gloriously beige meal. Future you will have opinions.");
+            gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
-            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+            changeDrunk(-3);
             gameState.hasCash = false;
           }
           break;
@@ -694,19 +890,21 @@
         // ISCA
         case "isca_fizz":
           addLog("You sip a glass of fizz and briefly consider moving to Paris.");
-          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          changeDrunk(1);
           break;
         case "isca_red":
           addLog("You savour a glass of red and nod like you understand tannins.");
-          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          changeDrunk(1);
           break;
         case "isca_white":
           addLog("You enjoy a crisp white that 'really opens up on the second sip'. Allegedly.");
-          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
+          changeDrunk(1);
           break;
         case "isca_cheese":
           addLog("You order a cheese board. It briefly silences the table.");
+          gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-2);
           break;
 
         // LEVY BAKERY
@@ -716,8 +914,9 @@
           } else {
             addLog("You buy a mixed Samoon. This is the crescendo of the night.");
             gameState.eatenSamoon = true;
+            gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
-            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+            changeDrunk(-3);
             gameState.hasCash = false;
           }
           break;
@@ -727,8 +926,9 @@
           } else {
             addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
             gameState.eatenSamoon = true;
+            gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
-            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
+            changeDrunk(-3);
             gameState.hasCash = false;
           }
           break;
@@ -744,6 +944,7 @@
           } else {
             addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
           }
+          gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
@@ -801,7 +1002,6 @@
           addLog("You do something indescribable. (Action not implemented.)");
       }
 
-      checkForBlackout();
       if (gameState.location !== "Home") {
         maybeRandomEvent();
       }
@@ -831,7 +1031,7 @@
         "Final stats — Drunk: " + gameState.drunk +
         " / Satiation: " + gameState.satiation +
         " / Cash: " + (gameState.hasCash ? "Yes" : "No") +
-        " / Card: " + (hasCardNow ? "Safely with you" : "Not with you")
+        " / Bank Card: " + (hasCardNow ? "Safely with you" : "Not with you")
       );
 
       if (gameState.drunk >= 8) {
@@ -854,12 +1054,14 @@
       const asciiEl = document.getElementById("asciiArt");
       const descEl = document.getElementById("description");
       const choicesEl = document.getElementById("choices");
+      const karaokeChoicesEl = document.getElementById("karaokeChoices");
       const statusLocationEl = document.getElementById("statusLocation");
       const statusCashEl = document.getElementById("statusCash");
       const statusCardEl = document.getElementById("statusCard");
       const statusDrunkEl = document.getElementById("statusDrunk");
       const statusSatiationEl = document.getElementById("statusSatiation");
       const logEl = document.getElementById("log");
+      const summaryEl = document.getElementById("sessionSummary");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -886,16 +1088,56 @@
         choicesEl.appendChild(btn);
       });
 
-      // Show full history, latest at the top
+      // Karaoke song list (only when choosing and in The Union)
+      karaokeChoicesEl.innerHTML = "";
+      if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
+        karaokeChoicesEl.style.display = "flex";
+        const title = document.createElement("div");
+        title.className = "karaoke-choices-title";
+        title.textContent = "Choose your karaoke song:";
+        karaokeChoicesEl.appendChild(title);
+
+        karaokeSongs.forEach((song, i) => {
+          const btn = document.createElement("button");
+          btn.textContent = (i + 1) + ". " + song;
+          btn.addEventListener("click", () => chooseKaraokeSong(song));
+          karaokeChoicesEl.appendChild(btn);
+        });
+      } else {
+        karaokeChoicesEl.style.display = "none";
+      }
+
+      // Full history, latest at the top; top entry bold
       logEl.innerHTML = "";
       const allEntries = [...gameState.log].reverse();
-      allEntries.forEach(entry => {
+      allEntries.forEach((entry, idx) => {
         const div = document.createElement("div");
         div.className = "log-entry";
-        div.textContent = "• " + entry;
+        if (idx === 0) {
+          const strong = document.createElement("strong");
+          strong.textContent = "• " + entry;
+          div.appendChild(strong);
+        } else {
+          div.textContent = "• " + entry;
+        }
         logEl.appendChild(div);
       });
       logEl.scrollTop = 0;
+
+      // Session summary
+      summaryEl.innerHTML = "";
+      const items = [
+        `Drinks consumed (including shots, pints, etc): ${gameState.drinksCount}`,
+        `Food items eaten: ${gameState.foodCount}`,
+        `Matches watched at The Union: ${gameState.matchesWatched}`,
+        `Samoon eaten: ${gameState.eatenSamoon ? "Yes" : "No"}`,
+        `Wife currently waiting on Quorn nuggies: ${gameState.wifeWantsQuorn ? "Yes" : "No"}`
+      ];
+      items.forEach(text => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        summaryEl.appendChild(li);
+      });
     }
 
     function handleChoice(index) {
@@ -905,6 +1147,9 @@
       if (!action) return;
 
       if (action.type === "move") {
+        // Cancel karaoke song selection if you wander off mid-binder
+        gameState.karaokeChoosingSong = false;
+
         if (currentLocationName === "ATM" && gameState.cardInMachine) {
           addLog("You wander off, leaving your card in the ATM. Oops.");
           gameState.cardInMachine = false;
@@ -914,7 +1159,6 @@
 
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
-        checkForBlackout();
         if (gameState.location !== "Home") {
           maybeRandomEvent();
         }
@@ -927,6 +1171,13 @@
     function addLog(text) {
       gameState.log.push(text);
     }
+
+    // Theme toggle
+    const themeToggleBtn = document.getElementById("themeToggle");
+    themeToggleBtn.addEventListener("click", () => {
+      const isLight = document.body.classList.toggle("light");
+      themeToggleBtn.textContent = isLight ? "Switch to Dark Mode" : "Switch to Light Mode";
+    });
 
     // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
