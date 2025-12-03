@@ -7,18 +7,7 @@
     * { box-sizing: border-box; }
 
     :root {
-      --bg: #050608;
-      --text: #f5f5f5;
-      --card-bg: #0b0d12;
-      --border: #333;
-      --accent-soft: #151824;
-      --accent-soft-hover: #22263a;
-      --muted: #aaa;
-      --muted-strong: #c9c9c9;
-      --log-border: #222;
-    }
-
-    body.light {
+      /* Light mode only */
       --bg: #f4f4f4;
       --text: #111;
       --card-bg: #ffffff;
@@ -50,7 +39,7 @@
       padding: 20px;
       max-width: 1100px;
       width: 95%;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
       transition: background 0.2s ease, border-color 0.2s ease;
     }
 
@@ -73,28 +62,6 @@
       font-size: 0.9rem;
       color: var(--muted);
       margin-bottom: 10px;
-    }
-
-    #themeToggle {
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--accent-soft);
-      color: var(--text);
-      font-size: 0.8rem;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s ease, border-color 0.2s ease, transform 0.07s ease;
-    }
-
-    #themeToggle:hover {
-      background: var(--accent-soft-hover);
-      border-color: var(--muted);
-      transform: translateY(-1px);
-    }
-
-    #themeToggle:active {
-      transform: translateY(0);
     }
 
     .status-bar {
@@ -137,7 +104,7 @@
     }
 
     .ascii-art {
-      background: var(--bg);
+      background: #eef0fa;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 14px;
@@ -145,6 +112,7 @@
       font-family: "Fira Code", "Cascadia Mono", Consolas, monospace;
       font-size: 13px;
       overflow-x: auto;
+      color: #111;
     }
 
     .screens-row {
@@ -166,7 +134,7 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.4rem;
       font-weight: 700;
       padding: 10px;
     }
@@ -254,20 +222,35 @@
       padding: 10px;
       border-radius: 10px;
       border: 1px dashed var(--border);
-      background: rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.6);
       display: none;
       flex-direction: column;
       gap: 6px;
       font-size: 0.85rem;
     }
 
-    body.light .karaoke-choices {
-      background: rgba(255,255,255,0.6);
-    }
-
     .karaoke-choices-title {
       font-weight: 600;
       margin-bottom: 4px;
+    }
+
+    .wife-status-banner {
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+    }
+
+    .wife-status-banner.active {
+      background: #ffebee;
+      border-color: #f44336;
+      color: #b71c1c;
+      font-weight: 700;
+    }
+
+    .wife-status-banner.inactive {
+      color: var(--muted);
     }
 
     .log {
@@ -347,14 +330,18 @@
       background: #b71c1c;
       border-color: #ef5350;
       color: #fff;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
+      text-align: center;
+      padding: 14px 16px;
+      font-size: 1.05rem;
+      box-shadow: 0 0 10px rgba(183, 28, 28, 0.6);
     }
 
     .taccy-button:hover {
       background: #d32f2f;
       border-color: #ff8a80;
-      box-shadow: 0 0 10px rgba(255, 82, 82, 0.6);
+      box-shadow: 0 0 14px rgba(255, 82, 82, 0.9);
     }
 
     .taccy-button:active {
@@ -385,14 +372,13 @@
     }
   </style>
 </head>
-<body class="light">
+<body>
   <div class="game-container">
     <div class="header-row">
       <div>
         <div class="title">LEV MISERABLES</div>
         <div class="subtitle">A Drinking Game</div>
       </div>
-      <button id="themeToggle">Switch to Dark Mode</button>
     </div>
 
     <div class="status-bar">
@@ -401,6 +387,7 @@
       <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
       <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
       <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
+      <div><strong>Score:</strong> <span id="statusScore"></span></div>
     </div>
 
     <div class="layout">
@@ -420,6 +407,7 @@
       </div>
 
       <div class="log-panel">
+        <div id="wifeStatus" class="wife-status-banner inactive"></div>
         <div class="log-title">Action Log</div>
         <div id="log" class="log"></div>
         <div class="hint">Press 1–9 to choose an option.</div>
@@ -449,7 +437,9 @@
       drunk: 0,
       satiation: 0,
       eatenSamoon: false,
+      samoonCount: 0,
       wifeWantsQuorn: false,
+      wifeNuggiesFulfilled: 0,
       log: [],
       drinksCount: 0,
       foodCount: 0,
@@ -515,6 +505,17 @@
       return "a player from " + teamName;
     }
 
+    function getScore() {
+      return (
+        gameState.drinksCount +
+        gameState.foodCount +
+        gameState.matchesWatched +
+        gameState.songsPerformed +
+        gameState.samoonCount +
+        gameState.wifeNuggiesFulfilled
+      );
+    }
+
     // --- DRUNK HELPERS ---
     function checkDrunkState() {
       if (gameState.drunk >= 5) {
@@ -572,19 +573,19 @@
    It's late on Stockport Road. Headlights smear through drizzle; shopfronts glow
    in neon and sodium. You can see:
 
-          [ ISCA ]       [ UNION PUB ]       [ LEVY BAKERY ]
-          [ NISPY ]      [ TESCO ]           [ ATM ]
+          [ ISCA ]       [ UNION ]       [ LEVY BAKERY ]
+          [ NISPY ]      [ TESCO ]       [ ATM ]
 
    Somewhere between glory and shame, you must choose your route.
         `,
         description: "You stand on Stockport Road, poised between greatness and questionable decisions. Where to first?",
         actions: [
-          { label: "Go to The Union (Pub)", type: "move", target: "The Union" },
-          { label: "Go to Nispy (Fried chicken shop)", type: "move", target: "Nispy" },
-          { label: "Go to Isca (Wine bar)", type: "move", target: "Isca" },
-          { label: "Go to Levy Bakery (Kebabs)", type: "move", target: "Levy Bakery" },
-          { label: "Go to Tesco (Supermarket)", type: "move", target: "Tesco" },
-          { label: "Go to ATM (Cash machine)", type: "move", target: "ATM" },
+          { label: "Go to The Union", type: "move", target: "The Union" },
+          { label: "Go to Nispy", type: "move", target: "Nispy" },
+          { label: "Go to Isca", type: "move", target: "Isca" },
+          { label: "Go to Levy Bakery", type: "move", target: "Levy Bakery" },
+          { label: "Go to Tesco", type: "move", target: "Tesco" },
+          { label: "Go to ATM", type: "move", target: "ATM" },
           { label: "Go home and end the night", type: "action", id: "end_night" }
         ]
       },
@@ -1097,6 +1098,7 @@
             if (!canEatMore()) break;
             addLog("You buy a mixed Samoon. This is the crescendo of the night.");
             gameState.eatenSamoon = true;
+            gameState.samoonCount += 1;
             gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
             changeDrunk(-3);
@@ -1110,6 +1112,7 @@
             if (!canEatMore()) break;
             addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
             gameState.eatenSamoon = true;
+            gameState.samoonCount += 1;
             gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
             changeDrunk(-3);
@@ -1126,6 +1129,7 @@
           if (gameState.wifeWantsQuorn) {
             addLog("You dutifully buy Quorn chicken nuggies. Your wife will be pleased (or at least less annoyed).");
             gameState.wifeWantsQuorn = false;
+            gameState.wifeNuggiesFulfilled += 1;
           } else {
             addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
           }
@@ -1217,12 +1221,14 @@
         addLog("LOSE: Tonight, " + joined + ". Levenshulme will give you another chance, though.");
       }
 
+      const totalScore = getScore();
       addLog(
         "Final stats — Drunk: " + gameState.drunk +
         " / Satiation: " + gameState.satiation +
         " / Cash: " + (gameState.hasCash ? "Yes" : "No") +
         " / Bank Card: " + (hasCardNow ? "Safely with you" : "Not with you")
       );
+      addLog("Total score for tonight: " + totalScore);
 
       if (gameState.drunk >= 8) {
         addLog("You are very much at the ‘singing to the kebab’ stage of the evening.");
@@ -1250,9 +1256,11 @@
       const statusCardEl = document.getElementById("statusCard");
       const statusDrunkEl = document.getElementById("statusDrunk");
       const statusSatiationEl = document.getElementById("statusSatiation");
+      const statusScoreEl = document.getElementById("statusScore");
       const logEl = document.getElementById("log");
       const summaryEl = document.getElementById("sessionSummary");
       const gameOverBanner = document.getElementById("gameOverBanner");
+      const wifeStatusEl = document.getElementById("wifeStatus");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -1267,6 +1275,16 @@
 
       statusDrunkEl.textContent = gameState.drunk + " / 10";
       statusSatiationEl.textContent = gameState.satiation + " / 10";
+      statusScoreEl.textContent = getScore();
+
+      // Wife status banner
+      if (gameState.wifeWantsQuorn) {
+        wifeStatusEl.textContent = "WIFE ALERT: She is waiting on Quorn chicken nuggies!";
+        wifeStatusEl.className = "wife-status-banner active";
+      } else {
+        wifeStatusEl.textContent = "Wife currently waiting on nuggies: No outstanding requests.";
+        wifeStatusEl.className = "wife-status-banner inactive";
+      }
 
       // GAME OVER banner visibility & text
       if (gameState.location === "Home") {
@@ -1353,8 +1371,9 @@
         `Food items eaten: ${gameState.foodCount}`,
         `Matches watched at The Union: ${gameState.matchesWatched}`,
         `Songs performed: ${gameState.songsPerformed}`,
-        `Samoon eaten: ${gameState.eatenSamoon ? "Yes" : "No"}`,
-        `Wife currently waiting on Quorn nuggies: ${gameState.wifeWantsQuorn ? "Yes" : "No"}`
+        `Samoons eaten: ${gameState.samoonCount}`,
+        `Wife's nuggie requests fulfilled: ${gameState.wifeNuggiesFulfilled}`,
+        `Total score so far: ${getScore()}`
       ];
       items.forEach(text => {
         const li = document.createElement("li");
@@ -1392,13 +1411,6 @@
     function addLog(text) {
       gameState.log.push(text);
     }
-
-    // Theme toggle
-    const themeToggleBtn = document.getElementById("themeToggle");
-    themeToggleBtn.addEventListener("click", () => {
-      const isLight = document.body.classList.toggle("light");
-      themeToggleBtn.textContent = isLight ? "Switch to Dark Mode" : "Switch to Light Mode";
-    });
 
     // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
