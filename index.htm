@@ -127,6 +127,15 @@
       flex-direction: column;
     }
 
+    .game-over-banner {
+      display: none;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      margin-bottom: 8px;
+    }
+
     .ascii-art {
       background: var(--bg);
       border-radius: 12px;
@@ -347,6 +356,7 @@
 
     <div class="layout">
       <div class="main-panel">
+        <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
         <pre id="asciiArt" class="ascii-art"></pre>
 
         <div class="screens-row">
@@ -470,6 +480,15 @@
         gameState.drinksCount += 1;
       }
       setDrunk(gameState.drunk + delta);
+    }
+
+    // Satiation cap check: any food except Quorn nuggies
+    function canEatMore() {
+      if (gameState.satiation >= 10) {
+        addLog("There is absolutely no way you are still hungry!");
+        return false;
+      }
+      return true;
     }
 
     // Queue log lines with a delay; optional per-line callback
@@ -891,8 +910,7 @@
         addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
       }
 
-      changeDrunk(1);
-
+      // No drunk level change from karaoke anymore
       const screen = document.getElementById("karaokeScreen");
       screen.style.display = "flex";
       screen.textContent = `♪ ${songTitle} ♪`;
@@ -934,24 +952,28 @@
           changeDrunk(1);
           break;
         case "union_salted_peanuts":
+          if (!canEatMore()) break;
           addLog("You grab a packet of salted peanuts. Salty, crunchy, vaguely stabilising.");
           gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           changeDrunk(-1);
           break;
         case "union_dry_roasted":
+          if (!canEatMore()) break;
           addLog("You order dry roasted peanuts. A sophisticated sort of chaos.");
           gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           changeDrunk(-1);
           break;
         case "union_bullys_sv":
+          if (!canEatMore()) break;
           addLog("You crack open a bag of Bullys salt & vinegar crisps. Eye-wateringly sharp, gloriously necessary.");
           gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           changeDrunk(-1);
           break;
         case "union_bullys_rs":
+          if (!canEatMore()) break;
           addLog("You go for Bullys ready salted crisps. Classic, dependable, exactly what you needed.");
           gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
@@ -963,6 +985,7 @@
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
           } else {
+            if (!canEatMore()) break;
             addLog("You order a gloriously beige meal. Future you will have opinions.");
             gameState.foodCount += 1;
             gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
@@ -988,6 +1011,7 @@
           changeDrunk(1);
           break;
         case "isca_cheese":
+          if (!canEatMore()) break;
           addLog("You order a cheese board. It briefly silences the table.");
           gameState.foodCount += 1;
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
@@ -999,6 +1023,7 @@
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
           } else {
+            if (!canEatMore()) break;
             addLog("You buy a mixed Samoon. This is the crescendo of the night.");
             gameState.eatenSamoon = true;
             gameState.foodCount += 1;
@@ -1011,6 +1036,7 @@
           if (!gameState.hasCash) {
             addLog("You try to order a Falafel Samoon but realise you have no cash. Levy Bakery waits, but your wallet does not.");
           } else {
+            if (!canEatMore()) break;
             addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
             gameState.eatenSamoon = true;
             gameState.foodCount += 1;
@@ -1025,6 +1051,7 @@
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
         case "tesco_quorn":
+          // Quorn nuggies IGNORE satiation-10 guard (as requested)
           if (gameState.wifeWantsQuorn) {
             addLog("You dutifully buy Quorn chicken nuggies. Your wife will be pleased (or at least less annoyed).");
             gameState.wifeWantsQuorn = false;
@@ -1149,6 +1176,7 @@
       const statusSatiationEl = document.getElementById("statusSatiation");
       const logEl = document.getElementById("log");
       const summaryEl = document.getElementById("sessionSummary");
+      const gameOverBanner = document.getElementById("gameOverBanner");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -1163,6 +1191,13 @@
 
       statusDrunkEl.textContent = gameState.drunk + " / 10";
       statusSatiationEl.textContent = gameState.satiation + " / 10";
+
+      // GAME OVER banner visibility
+      if (gameState.location === "Home") {
+        gameOverBanner.style.display = "block";
+      } else {
+        gameOverBanner.style.display = "none";
+      }
 
       asciiEl.textContent = loc.ascii;
       descEl.textContent = loc.description;
