@@ -130,9 +130,9 @@
     .game-over-banner {
       display: none;
       text-align: center;
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       font-weight: 900;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.08em;
       margin-bottom: 8px;
     }
 
@@ -250,7 +250,7 @@
     }
 
     .karaoke-choices {
-      margin-top: 10px;
+      margin-bottom: 10px;
       padding: 10px;
       border-radius: 10px;
       border: 1px dashed var(--border);
@@ -321,6 +321,27 @@
       margin-bottom: 2px;
     }
 
+    /* Taccy Vom Vom overlay */
+    .censored-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .censored-overlay-text {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #ff5252;
+      border: 4px solid #ff5252;
+      padding: 20px 40px;
+    }
+
     @media (max-width: 800px) {
       .layout {
         flex-direction: column;
@@ -328,11 +349,19 @@
       .log {
         max-height: 200px;
       }
+      .censored-overlay-text {
+        font-size: 2rem;
+        letter-spacing: 0.15em;
+      }
     }
 
     @media (max-width: 600px) {
       .ascii-art { font-size: 11px; }
       .status-bar > div { flex: 1 1 100%; }
+      .censored-overlay-text {
+        font-size: 1.6rem;
+        letter-spacing: 0.12em;
+      }
     }
   </style>
 </head>
@@ -365,8 +394,9 @@
         </div>
 
         <div id="description" class="description"></div>
-        <div id="choices" class="choices"></div>
+        <!-- Karaoke choices ABOVE normal choices -->
         <div id="karaokeChoices" class="karaoke-choices"></div>
+        <div id="choices" class="choices"></div>
       </div>
 
       <div class="log-panel">
@@ -380,6 +410,11 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Taccy Vom Vom overlay -->
+  <div id="censoredOverlay" class="censored-overlay">
+    <div class="censored-overlay-text">CENSORED</div>
   </div>
 
   <script>
@@ -694,12 +729,15 @@
                 |                       |
                 |   coat on chair       |
                 |   keys by the door    |
+                |      /\_/\\           |
+                |     ( o.o )  ~meow    |
+                |      > ^ <            |
                 |_______________________|
 
    You finally make it home. Stockport Road is a rumour outside the window now,
    and the night settles into memory.
         `,
-        description: "You finally make it home. The night in Levenshulme fades into a fuzzy memory.",
+        description: "You finally make it home. A small cat eyes you knowingly. The night in Levenshulme fades into a fuzzy memory.",
         actions: [
           { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
         ]
@@ -910,7 +948,7 @@
         addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
       }
 
-      // No drunk level change from karaoke anymore
+      // Karaoke no longer changes drunk level
       const screen = document.getElementById("karaokeScreen");
       screen.style.display = "flex";
       screen.textContent = `♪ ${songTitle} ♪`;
@@ -927,6 +965,19 @@
         }
         render();
       }, 5000);
+    }
+
+    // --- TACCY VOM VOM ---
+    function doTaccyVomVom() {
+      const overlay = document.getElementById("censoredOverlay");
+      overlay.style.display = "flex";
+
+      setTimeout(() => {
+        overlay.style.display = "none";
+        addLog("That's disgusting.");
+        gameState.satiation = 0;  // drunk unchanged
+        render();
+      }, 3000);
     }
 
     // --- ACTION HANDLERS ---
@@ -1051,7 +1102,7 @@
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
         case "tesco_quorn":
-          // Quorn nuggies IGNORE satiation-10 guard (as requested)
+          // Quorn nuggies IGNORE satiation-10 guard
           if (gameState.wifeWantsQuorn) {
             addLog("You dutifully buy Quorn chicken nuggies. Your wife will be pleased (or at least less annoyed).");
             gameState.wifeWantsQuorn = false;
@@ -1099,6 +1150,11 @@
             gameState.hasCard = true;
             addLog("You retrieve your card and tuck it safely away.");
           }
+          break;
+
+        // TACCY VOM VOM
+        case "taccy_vom_vom":
+          doTaccyVomVom();
           break;
 
         // END OF NIGHT
@@ -1192,8 +1248,13 @@
       statusDrunkEl.textContent = gameState.drunk + " / 10";
       statusSatiationEl.textContent = gameState.satiation + " / 10";
 
-      // GAME OVER banner visibility
+      // GAME OVER banner visibility & text
       if (gameState.location === "Home") {
+        if (gameState.wifeWantsQuorn) {
+          gameOverBanner.textContent = "GAME OVER YOU FORGOT THE NUGGIES. IT'S D I V O R C E TIME!";
+        } else {
+          gameOverBanner.textContent = "GAME OVER";
+        }
         gameOverBanner.style.display = "block";
       } else {
         gameOverBanner.style.display = "none";
@@ -1202,14 +1263,7 @@
       asciiEl.textContent = loc.ascii;
       descEl.textContent = loc.description;
 
-      choicesEl.innerHTML = "";
-      loc.actions.forEach((action, index) => {
-        const btn = document.createElement("button");
-        btn.textContent = (index + 1) + ". " + action.label;
-        btn.addEventListener("click", () => handleChoice(index));
-        choicesEl.appendChild(btn);
-      });
-
+      // Karaoke song list
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
         karaokeChoicesEl.style.display = "flex";
@@ -1227,6 +1281,30 @@
       } else {
         karaokeChoicesEl.style.display = "none";
       }
+
+      // Choices
+      choicesEl.innerHTML = "";
+      const actionsToShow = [...loc.actions];
+
+      // Conditionally add Taccy Vom Vom option (global special)
+      if (
+        gameState.location !== "Home" &&
+        gameState.satiation === 10 &&
+        gameState.drunk >= 5
+      ) {
+        actionsToShow.push({
+          label: "Taccy Vom Vom",
+          type: "action",
+          id: "taccy_vom_vom"
+        });
+      }
+
+      actionsToShow.forEach((action, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = (index + 1) + ". " + action.label;
+        btn.addEventListener("click", () => handleChoice(actionsToShow, index));
+        choicesEl.appendChild(btn);
+      });
 
       // Full history, latest at the top; top entry bold
       logEl.innerHTML = "";
@@ -1262,10 +1340,18 @@
       });
     }
 
-    function handleChoice(index) {
+    function handleChoice(actionsListOrIndex, maybeIndex) {
+      let actionsList, index;
+      if (Array.isArray(actionsListOrIndex)) {
+        actionsList = actionsListOrIndex;
+        index = maybeIndex;
+      } else {
+        // keyboard path, will be overridden below in keyboard handler
+        return;
+      }
+
       const currentLocationName = gameState.location;
-      const loc = locations[currentLocationName];
-      const action = loc.actions[index];
+      const action = actionsList[index];
       if (!action) return;
 
       if (action.type === "move") {
@@ -1304,7 +1390,22 @@
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
       const choiceIndex = parseInt(event.key, 10) - 1;
-      handleChoice(choiceIndex);
+
+      const loc = locations[gameState.location];
+      let actionsToShow = [...loc.actions];
+      if (
+        gameState.location !== "Home" &&
+        gameState.satiation === 10 &&
+        gameState.drunk >= 5
+      ) {
+        actionsToShow.push({
+          label: "Taccy Vom Vom",
+          type: "action",
+          id: "taccy_vom_vom"
+        });
+      }
+
+      handleChoice(actionsToShow, choiceIndex);
     });
 
     // Start game
