@@ -138,9 +138,15 @@
       overflow-x: auto;
     }
 
+    .screens-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
     .karaoke-screen {
       display: none;
-      margin-bottom: 10px;
       width: 100%;
       max-width: 260px;
       aspect-ratio: 1 / 1;
@@ -151,9 +157,43 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 1.1rem;        /* big text */
+      font-size: 1.1rem;
       font-weight: 700;
       padding: 10px;
+    }
+
+    .football-screen {
+      display: none;
+      width: 100%;
+      max-width: 260px;
+      aspect-ratio: 1 / 1;
+      background: #1b5e20;      /* green */
+      color: #ffffff;           /* white */
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px;
+      position: relative;
+    }
+
+    .football-screen .live-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #d50000;
+      color: #ffffff;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .football-screen .football-text {
+      margin-top: 8px;
     }
 
     .description {
@@ -308,7 +348,12 @@
     <div class="layout">
       <div class="main-panel">
         <pre id="asciiArt" class="ascii-art"></pre>
-        <div id="karaokeScreen" class="karaoke-screen"></div>
+
+        <div class="screens-row">
+          <div id="karaokeScreen" class="karaoke-screen"></div>
+          <div id="footballScreen" class="football-screen"></div>
+        </div>
+
         <div id="description" class="description"></div>
         <div id="choices" class="choices"></div>
         <div id="karaokeChoices" class="karaoke-choices"></div>
@@ -341,11 +386,9 @@
       eatenSamoon: false,
       wifeWantsQuorn: false,
       log: [],
-      // extra tracking for summary
       drinksCount: 0,
       foodCount: 0,
       matchesWatched: 0,
-      tipsyWarned: false,
       karaokeChoosingSong: false,
       songsPerformed: 0
     };
@@ -374,7 +417,6 @@
       return array[randInt(0, array.length - 1)];
     }
 
-    // Simple scorer pools
     const unitedScorers = [
       "Bruno Fernandes",
       "Mason Mount",
@@ -410,9 +452,8 @@
 
     // --- DRUNK HELPERS ---
     function checkDrunkState() {
-      if (gameState.drunk >= 5 && !gameState.tipsyWarned) {
+      if (gameState.drunk >= 5) {
         addLog("You are feeling tipsy, might it be time to eat something?");
-        gameState.tipsyWarned = true;
       }
       if (gameState.drunk >= 10 && gameState.location !== "Home") {
         blackoutToBed();
@@ -431,15 +472,17 @@
       setDrunk(gameState.drunk + delta);
     }
 
-    // Queue log lines with a delay between each
-    function queueLogEvents(lines, delayMs, onComplete) {
+    // Queue log lines with a delay; optional per-line callback
+    function queueLogEvents(lines, delayMs, onComplete, onEach) {
       let i = 0;
       function next() {
         if (i >= lines.length) {
           if (onComplete) onComplete();
           return;
         }
-        addLog(lines[i]);
+        const line = lines[i];
+        if (onEach) onEach(line);
+        addLog(line);
         render();
         i++;
         setTimeout(next, delayMs);
@@ -492,6 +535,10 @@
           { label: "Order a pint of Guinness", type: "action", id: "union_guinness" },
           { label: "Sing a song on karaoke", type: "action", id: "union_karaoke" },
           { label: "Dance with Julie", type: "action", id: "union_dance_julie" },
+          { label: "Order Salted Peanuts", type: "action", id: "union_salted_peanuts" },
+          { label: "Order Dry Roasted Peanuts", type: "action", id: "union_dry_roasted" },
+          { label: "Order Bullys Salt & Vinegar Crisps", type: "action", id: "union_bullys_sv" },
+          { label: "Order Bullys Ready Salted Crisps", type: "action", id: "union_bullys_rs" },
           { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
         ]
       },
@@ -619,7 +666,7 @@
 
       "Home": {
         ascii: String.raw`
-                 your flat, some time later
+                 your house, some time later
 
                  ________________________
                 |  __________   ____     |
@@ -640,7 +687,7 @@
       }
     };
 
-    // --- MATCH SIMULATION WITH TIMELINE ---
+    // --- MATCH SIMULATION WITH TV ---
     function simulateMatch() {
       const derbies = [
         {
@@ -768,12 +815,29 @@
 
       gameState.matchesWatched += 1;
 
-      queueLogEvents(lines, 2000, () => {
-        if (winner === "Manchester United" || winner === "Aston Villa") {
-          changeDrunk(2);
+      const footballScreen = document.getElementById("footballScreen");
+      footballScreen.style.display = "flex";
+
+      queueLogEvents(
+        lines,
+        2000,
+        () => {
+          if (winner === "Manchester United" || winner === "Aston Villa") {
+            changeDrunk(2);
+          }
+          setTimeout(() => {
+            footballScreen.style.display = "none";
+            footballScreen.innerHTML = "";
+          }, 4000);
           render();
+        },
+        (line) => {
+          footballScreen.innerHTML = `
+            <div class="live-badge">LIVE</div>
+            <div class="football-text">${line}</div>
+          `;
         }
-      });
+      );
     }
 
     // --- RANDOM EVENTS ---
@@ -851,10 +915,13 @@
     function performAction(actionId) {
       switch (actionId) {
         // UNION
-        case "union_guinness":
-          addLog("You order a pint of Guinness. It's oddly emotional.");
+        case "union_guinness": {
+          const decorations = ["heart", "musical note", "shamrock"];
+          const decoration = pickRandom(decorations);
+          addLog(`Mary hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
           changeDrunk(2);
           break;
+        }
         case "union_karaoke":
           if (gameState.drunk < 3) {
             addLog("Rockin Ronnie looks you up and down and says you're far too sober to touch the mic. Come back after a few more drinks.");
@@ -865,6 +932,30 @@
         case "union_dance_julie":
           addLog("You dance with Julie. It's chaotic but unforgettable.");
           changeDrunk(1);
+          break;
+        case "union_salted_peanuts":
+          addLog("You grab a packet of salted peanuts. Salty, crunchy, vaguely stabilising.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "union_dry_roasted":
+          addLog("You order dry roasted peanuts. A sophisticated sort of chaos.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "union_bullys_sv":
+          addLog("You crack open a bag of Bullys salt & vinegar crisps. Eye-wateringly sharp, gloriously necessary.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "union_bullys_rs":
+          addLog("You go for Bullys ready salted crisps. Classic, dependable, exactly what you needed.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
           break;
 
         // NISPY
