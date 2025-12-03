@@ -381,26 +381,20 @@
     // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
       if (gameState.location === "Home") return; // no chaos in bed
-      // Small chance per action / movement
       const roll = Math.random();
 
       // ~5% devil, ~5% Potts, ~5% wife text
       if (roll < 0.05) {
-        // Devil -> Union
         addLog("You bump into the devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
-        render();
       } else if (roll < 0.10) {
-        // Potts -> Levy Bakery
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
-        render();
       } else if (roll < 0.15) {
-        // Wife -> Quorn nuggies
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
-        render();
       }
+      // render is handled by caller
     }
 
     // --- BLACKOUT LOGIC ---
@@ -415,7 +409,7 @@
       gameState.location = "Home";
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
-      render();
+      // render handled by caller
     }
 
     // --- ACTION HANDLERS ---
@@ -472,7 +466,6 @@
             gameState.eatenSamoon = true;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
             gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
-            // Spend all cash on Samoon
             gameState.hasCash = false;
           }
           break;
@@ -484,7 +477,6 @@
             gameState.eatenSamoon = true;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
             gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
-            // Spend all cash on Samoon
             gameState.hasCash = false;
           }
           break;
@@ -504,7 +496,7 @@
           gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
           break;
 
-        // ATM NEW LOGIC
+        // ATM
         case "atm_insert_card":
           if (!gameState.hasCard && !gameState.cardInMachine) {
             addLog("You pat your pockets. No card. Perhaps the ATM already claimed it earlier.");
@@ -547,7 +539,8 @@
         case "end_night":
           endNight();
           render();
-          return; // don't trigger random events after end-night
+          return;
+
         // RESTART
         case "restart_game":
           window.location.reload();
@@ -560,13 +553,11 @@
       checkForBlackout();
       if (gameState.location !== "Home") {
         maybeRandomEvent();
-      } else {
-        render();
       }
+      render();
     }
 
     function endNight() {
-      // Move player home
       gameState.location = "Home";
 
       addLog("=== END OF NIGHT ===");
@@ -585,7 +576,6 @@
         addLog("LOSE: Tonight, " + joined + ". Levenshulme will give you another chance, though.");
       }
 
-      // Simple stat summary
       addLog(
         "Final stats — Drunk: " + gameState.drunk +
         " / Satiation: " + gameState.satiation +
@@ -593,7 +583,6 @@
         " / Card: " + (hasCardNow ? "Safely with you" : "Not with you")
       );
 
-      // Flavour based on stats
       if (gameState.drunk >= 8) {
         addLog("You are very much at the ‘singing to the kebab’ stage of the evening.");
       } else if (gameState.drunk <= 2) {
@@ -648,7 +637,7 @@
 
       // Show latest actions at the top
       logEl.innerHTML = "";
-      const recent = gameState.log.slice(-10).reverse(); // newest first
+      const recent = gameState.log.slice(-10).reverse();
       recent.forEach(entry => {
         const div = document.createElement("div");
         div.className = "log-entry";
@@ -665,7 +654,6 @@
       if (!action) return;
 
       if (action.type === "move") {
-        // If leaving ATM with card still in machine, you lose the card
         if (currentLocationName === "ATM" && gameState.cardInMachine) {
           addLog("You wander off, leaving your card in the ATM. Oops.");
           gameState.cardInMachine = false;
