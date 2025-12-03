@@ -182,7 +182,7 @@
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // Simple scorer pools (from current squads)
+    // Simple scorer pools
     const unitedScorers = [
       "Bruno Fernandes",
       "Mason Mount",
@@ -452,8 +452,6 @@
       const firstHalfGoals = [];
       for (let i = 0; i < fhHome; i++) firstHalfGoals.push({ team: "home" });
       for (let i = 0; i < fhAway; i++) firstHalfGoals.push({ team: "away" });
-
-      // Shuffle first-half goals a bit
       firstHalfGoals.sort(() => Math.random() - 0.5);
 
       // Second half goals
@@ -474,7 +472,7 @@
 
       lines.push(`Potts and The Devil summon you to The Union to watch ${derby.home} vs ${derby.away} (${derby.name}).`);
 
-      // First-half goal announcements
+      // First-half goals
       firstHalfGoals.forEach((g) => {
         const teamName = g.team === "home" ? derby.home : derby.away;
         const scorer = randomScorer(teamName);
@@ -483,7 +481,7 @@
 
       lines.push(`Half time: ${derby.home} ${fhHome}–${fhAway} ${derby.away}.`);
 
-      // Second-half goal announcements
+      // Second half goals
       secondHalfGoals.forEach((g) => {
         const teamName = g.team === "home" ? derby.home : derby.away;
         const scorer = randomScorer(teamName);
@@ -522,13 +520,12 @@
       let homePens = 0;
       let awayPens = 0;
 
-      // Penalties if still level after ET or 90 (when we didn't go to ET)
+      // Penalties if still level
       if (homeTotal === awayTotal) {
         wentToPens = true;
         homePens = randInt(4, 7);
         awayPens = randInt(4, 7);
         if (awayPens === homePens) {
-          // ensure not a draw in the shootout
           awayPens += (Math.random() < 0.5 ? 1 : -1);
           if (awayPens < 0) awayPens = 0;
         }
@@ -558,16 +555,18 @@
         winner = homeTotal > awayTotal ? derby.home : derby.away;
       }
 
-      // Reactions from Potts and The Devil (as log lines)
+      // Reactions from Potts / Devil / wife
       if (winner === "Everton") {
         lines.push("Everton win! Potts is elated and announces he's off home to roast a chicken.");
       } else if (winner === "Manchester United") {
         lines.push("Manchester United win! The Devil is in his element and buys you a Guinness.");
+      } else if (winner === "Aston Villa") {
+        lines.push("Aston Villa win! Your wife turns up at The Union and buys you a Guinness.");
       }
 
-      // Play the timeline with delays, then apply drunk consequences
+      // Play the timeline, then apply drunk consequences
       queueLogEvents(lines, 2000, () => {
-        if (winner === "Manchester United") {
+        if (winner === "Manchester United" || winner === "Aston Villa") {
           gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
           checkForBlackout();
           render();
@@ -577,32 +576,25 @@
 
     // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
-      if (gameState.location === "Home") return; // no chaos in bed
+      if (gameState.location === "Home") return;
       const roll = Math.random();
       const current = gameState.location;
 
-      // ~5% Devil (only if not already in The Union)
       if (roll < 0.05 && current !== "The Union") {
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
         render();
-      }
-      // ~5% Potts (only if not already in Levy Bakery)
-      else if (roll < 0.10 && current !== "Levy Bakery") {
+      } else if (roll < 0.10 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
         render();
-      }
-      // ~5% wife text (can always happen)
-      else if (roll < 0.15) {
+      } else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
-      }
-      // ~5% chance Potts & The Devil summon you to The Union for a match (only if not already there)
-      else if (roll < 0.20 && current !== "The Union") {
+      } else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
         render();
         simulateMatch();
-        return; // match will drive its own log updates
+        return;
       }
     }
 
@@ -645,7 +637,7 @@
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
 
-        // NISPY (food reduces drunk by 3, needs & spends cash)
+        // NISPY
         case "nispy_meal":
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
@@ -653,7 +645,7 @@
             addLog("You order a gloriously beige meal. Future you will have opinions.");
             gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
             gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
-            gameState.hasCash = false; // spend the money
+            gameState.hasCash = false;
           }
           break;
         case "nispy_salt":
@@ -714,7 +706,6 @@
             addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
           }
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
-          // no impact on drunk level
           break;
 
         // ATM
