@@ -23,7 +23,7 @@
       border: 1px solid #333;
       border-radius: 16px;
       padding: 20px;
-      max-width: 900px;
+      max-width: 1100px;
       width: 95%;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     }
@@ -55,6 +55,23 @@
 
     .status-bar > div {
       flex: 1 1 45%;
+    }
+
+    .layout {
+      display: flex;
+      gap: 16px;
+    }
+
+    .main-panel {
+      flex: 2;
+      min-width: 0;
+    }
+
+    .log-panel {
+      flex: 1;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
     }
 
     .ascii-art {
@@ -110,13 +127,20 @@
     }
 
     .log {
-      border-top: 1px solid #222;
-      padding-top: 8px;
-      margin-top: 6px;
+      border-left: 1px solid #222;
+      padding-left: 10px;
+      margin-left: 4px;
       font-size: 0.85rem;
-      max-height: 150px;
+      flex: 1;
       overflow-y: auto;
       color: #bfbfbf;
+    }
+
+    .log-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #ddd;
     }
 
     .log-entry {
@@ -128,6 +152,15 @@
       font-size: 0.78rem;
       color: #888;
       text-align: right;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        flex-direction: column;
+      }
+      .log {
+        max-height: 200px;
+      }
     }
 
     @media (max-width: 600px) {
@@ -149,13 +182,19 @@
       <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
     </div>
 
-    <pre id="asciiArt" class="ascii-art"></pre>
-    <div id="description" class="description"></div>
+    <div class="layout">
+      <div class="main-panel">
+        <pre id="asciiArt" class="ascii-art"></pre>
+        <div id="description" class="description"></div>
+        <div id="choices" class="choices"></div>
+      </div>
 
-    <div id="choices" class="choices"></div>
-
-    <div id="log" class="log"></div>
-    <div class="hint">Press 1–9 to choose an option.</div>
+      <div class="log-panel">
+        <div class="log-title">Action Log</div>
+        <div id="log" class="log"></div>
+        <div class="hint">Press 1–9 to choose an option.</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -555,7 +594,7 @@
         winner = homeTotal > awayTotal ? derby.home : derby.away;
       }
 
-      // Reactions from Potts / Devil / wife
+      // Reactions
       if (winner === "Everton") {
         lines.push("Everton win! Potts is elated and announces he's off home to roast a chicken.");
       } else if (winner === "Manchester United") {
@@ -847,10 +886,10 @@
         choicesEl.appendChild(btn);
       });
 
-      // Show latest actions at the top
+      // Show full history, latest at the top
       logEl.innerHTML = "";
-      const recent = gameState.log.slice(-10).reverse();
-      recent.forEach(entry => {
+      const allEntries = [...gameState.log].reverse();
+      allEntries.forEach(entry => {
         const div = document.createElement("div");
         div.className = "log-entry";
         div.textContent = "• " + entry;
