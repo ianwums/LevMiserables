@@ -46,10 +46,15 @@
 
     .status-bar {
       display: flex;
-      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
       font-size: 0.85rem;
       margin-bottom: 10px;
       color: #c9c9c9;
+    }
+
+    .status-bar > div {
+      flex: 1 1 45%;
     }
 
     .ascii-art {
@@ -109,7 +114,7 @@
       padding-top: 8px;
       margin-top: 6px;
       font-size: 0.85rem;
-      max-height: 120px;
+      max-height: 150px;
       overflow-y: auto;
       color: #bfbfbf;
     }
@@ -125,8 +130,30 @@
       text-align: right;
     }
 
+    /* Small music control button (only shown if autoplay fails) */
+    .music-control {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    .music-control button {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #555;
+      background: #181b28;
+      color: #f5f5f5;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .music-control button:hover {
+      background: #24293a;
+    }
+
     @media (max-width: 600px) {
       .ascii-art { font-size: 11px; }
+      .status-bar > div { flex: 1 1 100%; }
     }
   </style>
 </head>
@@ -138,6 +165,9 @@
     <div class="status-bar">
       <div><strong>Location:</strong> <span id="statusLocation"></span></div>
       <div><strong>Cash:</strong> <span id="statusCash"></span></div>
+      <div><strong>Card:</strong> <span id="statusCard"></span></div>
+      <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
+      <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
     </div>
 
     <pre id="asciiArt" class="ascii-art"></pre>
@@ -147,15 +177,40 @@
 
     <div id="log" class="log"></div>
     <div class="hint">Press 1–9 to choose an option.</div>
+
+    <!-- Music control appears only if autoplay is blocked -->
+    <div id="musicControl" class="music-control" style="display:none;">
+      <button id="musicButton">▶ Enable music</button>
+      <span> (Les Mis – “Do You Hear The People Sing?”)</span>
+    </div>
   </div>
+
+  <!-- Hidden audio element for background music -->
+  <audio
+    id="bgMusic"
+    src="https://www.televisiontunes.com/uploads/audio/Les%20Miserables%20-%20Do%20You%20Hear%20The%20People%20Sing.mp3"
+    preload="auto"
+    loop
+  ></audio>
 
   <script>
     // --- GAME STATE ---
     const gameState = {
       location: "Stockport Road",
       hasCash: false,
+      hasCard: true,
+      cardInMachine: false,
+      pendingCash: false,
+      drunk: 0,
+      satiation: 0,
+      eatenSamoon: false,
+      cardLost: false,
       log: []
     };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
 
     // --- WORLD / LOCATIONS ---
     const locations = {
@@ -185,7 +240,8 @@
           { label: "Go to Isca (Wine bar)", type: "move", target: "Isca" },
           { label: "Go to Levy Bakery (Kebabs)", type: "move", target: "Levy Bakery" },
           { label: "Go to Tesco (Supermarket)", type: "move", target: "Tesco" },
-          { label: "Go to ATM (Cash machine)", type: "move", target: "ATM" }
+          { label: "Go to ATM (Cash machine)", type: "move", target: "ATM" },
+          { label: "Go home and end the night", type: "action", id: "end_night" }
         ]
       },
 
@@ -299,8 +355,29 @@
         `,
         description: "A lonely ATM hums softly, ready to enable more questionable purchases.",
         actions: [
+          { label: "Insert card", type: "action", id: "atm_insert_card" },
           { label: "Withdraw money", type: "action", id: "atm_withdraw" },
+          { label: "Take cash", type: "action", id: "atm_take_cash" },
+          { label: "Retrieve card", type: "action", id: "atm_retrieve_card" },
           { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Home": {
+        ascii: String.raw`
+             ____________
+            /   HOME     \
+           /______________\
+           |   __   __   |
+           |  |  | |  |  |
+           |  |__| |__|  |
+           |    ____     |
+           |   |SOFA|    |
+           |_____________|
+        `,
+        description: "You finally make it home. The night in Levenshulme fades into a fuzzy memory.",
+        actions: [
+          { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
         ]
       }
     };
@@ -311,17 +388,21 @@
         // UNION
         case "union_guinness":
           addLog("You order a pint of Guinness. It's oddly emotional.");
+          gameState.drunk = clamp(gameState.drunk + 2, 0, 10);
           break;
         case "union_karaoke":
           addLog("You belt out a karaoke classic. Some people cheer. Others look concerned.");
+          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
         case "union_dance_julie":
           addLog("You dance with Julie. It's chaotic but unforgettable.");
+          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
 
         // NISPY
         case "nispy_meal":
           addLog("You order a gloriously beige meal. Future you will have opinions.");
+          gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
           break;
         case "nispy_salt":
           addLog("You ask for extra salt. They hand you a sachet the size of a small pillow.");
@@ -330,15 +411,19 @@
         // ISCA
         case "isca_fizz":
           addLog("You sip a glass of fizz and briefly consider moving to Paris.");
+          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
         case "isca_red":
           addLog("You savour a glass of red and nod like you understand tannins.");
+          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
         case "isca_white":
           addLog("You enjoy a crisp white that 'really opens up on the second sip'. Allegedly.");
+          gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
         case "isca_cheese":
           addLog("You order a cheese board. It briefly silences the table.");
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
         // LEVY BAKERY (cash gate!)
@@ -347,6 +432,10 @@
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
           } else {
             addLog("You buy a mixed Samoon. This is the crescendo of the night.");
+            gameState.eatenSamoon = true;
+            gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
+            // Spend all cash on Samoon
+            gameState.hasCash = false;
           }
           break;
         case "levy_falafel":
@@ -354,6 +443,10 @@
             addLog("You try to order a Falafel Samoon but realise you have no cash. Levy Bakery waits, but your wallet does not.");
           } else {
             addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
+            gameState.eatenSamoon = true;
+            gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
+            // Spend all cash on Samoon
+            gameState.hasCash = false;
           }
           break;
 
@@ -363,16 +456,105 @@
           break;
         case "tesco_quorn":
           addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
-        // ATM
+        // ATM NEW LOGIC
+        case "atm_insert_card":
+          if (!gameState.hasCard && !gameState.cardInMachine) {
+            addLog("You pat your pockets. No card. Perhaps the ATM already claimed it earlier.");
+          } else if (gameState.cardInMachine) {
+            addLog("Your card is already in the machine.");
+          } else {
+            gameState.hasCard = false;
+            gameState.cardInMachine = true;
+            addLog("You insert your card into the ATM.");
+          }
+          break;
         case "atm_withdraw":
-          gameState.hasCash = true;
-          addLog("You withdraw some cash. You are now Samoon-enabled.");
+          if (!gameState.cardInMachine) {
+            addLog("The ATM beeps impatiently. It would like a card first.");
+          } else {
+            gameState.pendingCash = true;
+            addLog("You request some cash. The machine whirs loudly.");
+          }
+          break;
+        case "atm_take_cash":
+          if (!gameState.pendingCash) {
+            addLog("There is no cash waiting for you. You stare at the slot hopefully anyway.");
+          } else {
+            gameState.pendingCash = false;
+            gameState.hasCash = true;
+            addLog("You take the cash. You are now Samoon-enabled.");
+          }
+          break;
+        case "atm_retrieve_card":
+          if (!gameState.cardInMachine) {
+            addLog("There is no card to retrieve. Maybe it’s already in your pocket. Maybe it never was.");
+          } else {
+            gameState.cardInMachine = false;
+            gameState.hasCard = true;
+            addLog("You retrieve your card and tuck it safely away.");
+          }
+          break;
+
+        // END OF NIGHT
+        case "end_night":
+          endNight();
+          break;
+
+        // RESTART
+        case "restart_game":
+          window.location.reload();
           break;
 
         default:
           addLog("You do something indescribable. (Action not implemented.)");
+      }
+
+      render();
+    }
+
+    function endNight() {
+      // Move player home
+      gameState.location = "Home";
+
+      addLog("=== END OF NIGHT ===");
+
+      // Outcome
+      const hasSamoon = gameState.eatenSamoon;
+      const hasCardNow = gameState.hasCard && !gameState.cardLost;
+
+      let reasons = [];
+      if (!hasSamoon) reasons.push("you never got your Samoon");
+      if (!hasCardNow) reasons.push("you lost track of your card");
+
+      if (hasSamoon && hasCardNow) {
+        addLog("WIN: You ate Samoon and made it home with your card. A small but powerful victory.");
+      } else {
+        const joined = reasons.join(" and ");
+        addLog("LOSE: Tonight, " + joined + ". Levenshulme will give you another chance, though.");
+      }
+
+      // Simple stat summary
+      addLog(
+        "Final stats — Drunk: " + gameState.drunk +
+        " / Satiation: " + gameState.satiation +
+        " / Cash: " + (gameState.hasCash ? "Yes" : "No") +
+        " / Card: " + (hasCardNow ? "Safely with you" : "Not with you")
+      );
+
+      // Light flavour based on stats
+      if (gameState.drunk >= 8) {
+        addLog("You are very much at the ‘singing to the kebab’ stage of the evening.");
+      } else if (gameState.drunk <= 2) {
+        addLog("A surprisingly sensible night. Are you feeling okay?");
+      }
+
+      if (gameState.satiation >= 8) {
+        addLog("You are absolutely stuffed. Samoon plus snacks was perhaps ambitious.");
+      } else if (gameState.satiation <= 2) {
+        addLog("You probably should have eaten more than that.");
       }
 
       render();
@@ -387,10 +569,24 @@
       const choicesEl = document.getElementById("choices");
       const statusLocationEl = document.getElementById("statusLocation");
       const statusCashEl = document.getElementById("statusCash");
+      const statusCardEl = document.getElementById("statusCard");
+      const statusDrunkEl = document.getElementById("statusDrunk");
+      const statusSatiationEl = document.getElementById("statusSatiation");
       const logEl = document.getElementById("log");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
+
+      if (gameState.hasCard) {
+        statusCardEl.textContent = "In your pocket";
+      } else if (gameState.cardInMachine) {
+        statusCardEl.textContent = "In the ATM";
+      } else {
+        statusCardEl.textContent = "Lost somewhere";
+      }
+
+      statusDrunkEl.textContent = gameState.drunk + " / 10";
+      statusSatiationEl.textContent = gameState.satiation + " / 10";
 
       asciiEl.textContent = loc.ascii;
       descEl.textContent = loc.description;
@@ -404,7 +600,7 @@
       });
 
       logEl.innerHTML = "";
-      gameState.log.slice(-8).forEach(entry => {
+      gameState.log.slice(-10).forEach(entry => {
         const div = document.createElement("div");
         div.className = "log-entry";
         div.textContent = "• " + entry;
@@ -413,11 +609,20 @@
     }
 
     function handleChoice(index) {
-      const loc = locations[gameState.location];
+      const currentLocationName = gameState.location;
+      const loc = locations[currentLocationName];
       const action = loc.actions[index];
       if (!action) return;
 
       if (action.type === "move") {
+        // If leaving ATM with card still in machine, you lose the card
+        if (currentLocationName === "ATM" && gameState.cardInMachine) {
+          addLog("You wander off, leaving your card in the ATM. Oops.");
+          gameState.cardInMachine = false;
+          gameState.hasCard = false;
+          gameState.cardLost = true;
+        }
+
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
         render();
@@ -430,6 +635,20 @@
       gameState.log.push(text);
     }
 
+    // --- MUSIC AUTOPLAY LOGIC ---
+    function tryPlayMusic() {
+      const audio = document.getElementById("bgMusic");
+      const musicControl = document.getElementById("musicControl");
+
+      audio.play().then(() => {
+        // Autoplay success, keep button hidden
+        musicControl.style.display = "none";
+      }).catch(() => {
+        // Autoplay blocked – show "Enable music" button
+        musicControl.style.display = "block";
+      });
+    }
+
     // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
@@ -437,10 +656,19 @@
       handleChoice(choiceIndex);
     });
 
-    // Start game
+    // Start game + attempt music
     window.addEventListener("load", () => {
       addLog("You step out onto Stockport Road. The night begins.");
       render();
+      tryPlayMusic();
+
+      // If user clicks "Enable music"
+      const musicButton = document.getElementById("musicButton");
+      const audio = document.getElementById("bgMusic");
+      musicButton.addEventListener("click", () => {
+        audio.play();
+        document.getElementById("musicControl").style.display = "none";
+      });
     });
   </script>
 </body>
