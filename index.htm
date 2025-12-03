@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Lev Miserables</title>
+  <title>Lev Miserables - A Drinking Game</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -130,27 +130,6 @@
       text-align: right;
     }
 
-    /* Small music control button (only shown if autoplay fails) */
-    .music-control {
-      margin-top: 6px;
-      font-size: 0.8rem;
-      text-align: left;
-    }
-
-    .music-control button {
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid #555;
-      background: #181b28;
-      color: #f5f5f5;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .music-control button:hover {
-      background: #24293a;
-    }
-
     @media (max-width: 600px) {
       .ascii-art { font-size: 11px; }
       .status-bar > div { flex: 1 1 100%; }
@@ -160,7 +139,7 @@
 <body>
   <div class="game-container">
     <div class="title">LEV MISERABLES</div>
-    <div class="subtitle">A night out on Stockport Road</div>
+    <div class="subtitle">A Drinking Game on Stockport Road</div>
 
     <div class="status-bar">
       <div><strong>Location:</strong> <span id="statusLocation"></span></div>
@@ -177,21 +156,7 @@
 
     <div id="log" class="log"></div>
     <div class="hint">Press 1–9 to choose an option.</div>
-
-    <!-- Music control appears only if autoplay is blocked -->
-    <div id="musicControl" class="music-control" style="display:none;">
-      <button id="musicButton">▶ Enable music</button>
-      <span> (Les Mis – “Do You Hear The People Sing?”)</span>
-    </div>
   </div>
-
-  <!-- Hidden audio element for background music -->
-  <audio
-    id="bgMusic"
-    src="https://www.televisiontunes.com/uploads/audio/Les%20Miserables%20-%20Do%20You%20Hear%20The%20People%20Sing.mp3"
-    preload="auto"
-    loop
-  ></audio>
 
   <script>
     // --- GAME STATE ---
@@ -200,11 +165,12 @@
       hasCash: false,
       hasCard: true,
       cardInMachine: false,
+      cardLost: false,
       pendingCash: false,
       drunk: 0,
       satiation: 0,
       eatenSamoon: false,
-      cardLost: false,
+      wifeWantsQuorn: false,
       log: []
     };
 
@@ -216,24 +182,23 @@
     const locations = {
       "Stockport Road": {
         ascii: String.raw`
-      _________  _              _                       _ 
-     /  _____/ | |            | |                     | |
-    |  (___  __| |_ ___   ___ | |_   _ __ ___   ___   | |
-     \___  \|__   _/ _ \ / _ \| __| | '_ ' _ \ / _ \  | |
-     ____)  | | || (_) | (_) | |_  | | | | | |  __/  |_|
-    |______/   \__\___/ \___/ \__| |_| |_| |_|\___|  (_)
+   __     ______ _   _    __  __ _           _                _             
+   \ \   / / ___| | | |  |  \/  (_)_ __ ___ (_) ___ _ __   __| | ___  _ __  
+    \ \ / / |   | | | |  | |\/| | | '_ ' _ \| |/ _ \ '_ \ / _' |/ _ \| '_ \ 
+     \ V /| |___| |_| |  | |  | | | | | | | | |  __/ | | | (_| | (_) | | | |
+      \_/  \____|\___/   |_|  |_|_|_| |_| |_|_|\___|_| |_|\__,_|\___/|_| |_|
 
-    A chilly night on Stockport Road. Neon, traffic, and the faint
-    promise of terrible decisions. From here you can see:
+                           A   D R I N K I N G   G A M E
 
-      - ISCA (wine bar)
-      - THE UNION (pub)
-      - LEVY BAKERY (kebabs)
-      - NISPY (fried chicken)
-      - TESCO (supermarket)
-      - ATM (cash machine)
+   It's late on Stockport Road. Headlights smear through drizzle; shopfronts glow
+   in neon and sodium. You can see:
+
+          [ ISCA ]       [ UNION PUB ]       [ LEVY BAKERY ]
+          [ NISPY ]      [ TESCO ]           [ ATM ]
+
+   Somewhere between glory and shame, you must choose your route.
         `,
-        description: "You stand on Stockport Road, poised between greatness and shame. Where to first?",
+        description: "You stand on Stockport Road, poised between greatness and questionable decisions. Where to first?",
         actions: [
           { label: "Go to The Union (Pub)", type: "move", target: "The Union" },
           { label: "Go to Nispy (Fried chicken shop)", type: "move", target: "Nispy" },
@@ -247,17 +212,20 @@
 
       "The Union": {
         ascii: String.raw`
-           _______________________
-          |   THE UNION (PUB)    |
-          |----------------------|
-          |  [   GUINNESS   ]    |
-          |   ___   ___   ___    |
-          |  |___| |___| |___|   |
-          |                      |
-          |   ♪  KARAOKE  ♪      |
-          |______________________|
+           ______________________________________
+          |   THE UNION                         |
+          |-------------------------------------|
+          |  █████  █████  █████   TV: ⚽       |
+          |  █   █  █   █  █   █                |
+          |  █   █  █   █  █   █   ♪ KARAOKE ♪ |
+          |                                     |
+          |   [ BAR ]          [ STICKY FLOOR ] |
+          |_____________________________________|
+
+   The pub is loud but comforting. Condensation on windows, pints on every table,
+   and someone definitely singing badly at the back.
         `,
-        description: "Sticky carpet, familiar faces, the comforting whiff of spilt Guinness. The DJ is queueing up karaoke.",
+        description: "Sticky carpet, familiar faces, and the comforting whiff of spilt Guinness. The DJ is queueing up karaoke.",
         actions: [
           { label: "Order a pint of Guinness", type: "action", id: "union_guinness" },
           { label: "Sing a song on karaoke", type: "action", id: "union_karaoke" },
@@ -268,16 +236,18 @@
 
       "Nispy": {
         ascii: String.raw`
-           _   _       _           
-          | \ | | ___ (_)___  _ __ 
-          |  \| |/ _ \| / __|| '__|
-          | |\  |  __/| \__ \| |   
-          |_| \_|\___||_|___/|_|   
+                _____________________________
+               |   N I S P Y   C H I C K E N |
+               |-----------------------------|
+               |  [ HOT LAMP ]   [ MENU ]    |
+               |   🍗 🍗 🍗    1. Meal Deal |
+               |   🍗 🍗 🍗    2. Wings     |
+               |                             |
+               |  COUNTER  | 'SALT?'   🧂   |
+               |___________|_________________|
 
-           NISPY FRIED CHICKEN
-
-           [ BARGAIN BUCKETS ]
-           [    WINGS & THINGS ]
+   Heat lamps glow amber over trays of fried chicken. The air is thick with oil,
+   spice, and half-shouted orders.
         `,
         description: "The warm glow of the heat lamps. The smell of fried everything. A man in front of you is arguing about sauce.",
         actions: [
@@ -289,13 +259,19 @@
 
       "Isca": {
         ascii: String.raw`
-           ___
-          /___\    ISCA
-         (|🍷|)  WINE  BAR
-          \___/
+             ___________________________
+            |          ISCA            |
+            |--------------------------|
+            |   🍷   🍷   🍷          |
+            |  [BAR]  glasses softly   |
+            |         clinking         |
+            |                          |
+            |  small tables, candles   |
+            |  and low murmured chat   |
+            |__________________________|
 
-         Chalkboard menus, candlelight,
-         people discussing natural wine and politics.
+   Natural wine bottles line the wall, each with a label more abstract than last.
+   Someone at the bar is saying 'skin contact' a suspicious amount.
         `,
         description: "Soft lighting, clinking glasses, and someone saying the word 'minerality' unironically.",
         actions: [
@@ -309,14 +285,19 @@
 
       "Levy Bakery": {
         ascii: String.raw`
-           __    _                  _             
-          / /   | |                | |            
-         / /    | | ___  _   _  ___| | ___  _ __  
-        / /     | |/ _ \| | | |/ __| |/ _ \| '_ \ 
-       / /   _  | | (_) | |_| | (__| | (_) | | | |
-      /_/   (_) |_|\___/ \__,_|\___|_|\___/|_| |_|
+            _________________________________
+           |        LEVY BAKERY (SAMOON)     |
+           |---------------------------------|
+           |  OVEN: 🔥🔥🔥      GRILL: ▓▓▓  |
+           |                                 |
+           |   trays of oval Samoon bread    |
+           |   stacked behind a glass case   |
+           |                                 |
+           |  [ COUNTER ]   'Cash only, luv' |
+           |_________________________________|
 
-          LEVY BAKERY - SAMOON & KEBABS
+   The warmth hits you as you step in: fresh bread, grilling meat, sesame and spice.
+   This is where nights are anchored and redeemed.
         `,
         description: "The counter is lined with glorious Samoon bread. The grill sizzles. This is the point of no return.",
         actions: [
@@ -328,12 +309,18 @@
 
       "Tesco": {
         ascii: String.raw`
-          _______  _______  _______  _______ 
-         |__   __||__   __||__   __||__   __|
-            | |      | |      | |      | |   
-         T  | |  E   | |  S   | |  C  | |  O
+               ___________________________
+              |          TESCO            |
+              |---------------------------|
+              |  AISLE 1  |  AISLE 2      |
+              |  snacks   |  frozen veg   |
+              |  ----->   |  nuggies ➤    |
+              |                           |
+              |  self-checkouts: 'Beep'   |
+              |___________________________|
 
-          It's your friendly local Tesco.
+   Fluorescent lighting hums overhead. Baskets clatter, scanners beep, and
+   everyone is pretending not to read the meal deal options for the fourth time.
         `,
         description: "Fluorescent lighting, aisles of mild chaos, and a queue of people buying exactly three items.",
         actions: [
@@ -345,13 +332,18 @@
 
       "ATM": {
         ascii: String.raw`
-           ___________________
-          |  ____   ____     |
-          | | __ | | __ |    |
-          | ||__|| ||__||    |
-          | |____| |____|    |
-          |   ATM MACHINE    |
-          |__________________|
+           street corner, slightly damp
+           ______________________
+          |  [    BANK ATM    ] |
+          |  ┌──────────────┐  |
+          |  |  ENTER PIN   |  |
+          |  |              |  |
+          |  |   [££££]     |  |
+          |  └──────────────┘  |
+          |   card slot  ⬛     |
+          |____________________|
+
+   The ATM glows against the dark, a shrine to reckless financial decisions.
         `,
         description: "A lonely ATM hums softly, ready to enable more questionable purchases.",
         actions: [
@@ -365,15 +357,19 @@
 
       "Home": {
         ascii: String.raw`
-             ____________
-            /   HOME     \
-           /______________\
-           |   __   __   |
-           |  |  | |  |  |
-           |  |__| |__|  |
-           |    ____     |
-           |   |SOFA|    |
-           |_____________|
+                 your flat, some time later
+
+                 ________________________
+                |  __________   ____     |
+                | |  SOFA   | | TV |     |
+                | |_________| |____|     |
+                |                       |
+                |   coat on chair       |
+                |   keys by the door    |
+                |_______________________|
+
+   You finally make it home. Stockport Road is a rumour outside the window now,
+   and the night settles into memory.
         `,
         description: "You finally make it home. The night in Levenshulme fades into a fuzzy memory.",
         actions: [
@@ -381,6 +377,46 @@
         ]
       }
     };
+
+    // --- RANDOM EVENTS ---
+    function maybeRandomEvent() {
+      if (gameState.location === "Home") return; // no chaos in bed
+      // Small chance per action / movement
+      const roll = Math.random();
+
+      // ~5% devil, ~5% Potts, ~5% wife text
+      if (roll < 0.05) {
+        // Devil -> Union
+        addLog("You bump into the devil, who grins and steers you firmly towards The Union.");
+        gameState.location = "The Union";
+        render();
+      } else if (roll < 0.10) {
+        // Potts -> Levy Bakery
+        addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
+        gameState.location = "Levy Bakery";
+        render();
+      } else if (roll < 0.15) {
+        // Wife -> Quorn nuggies
+        addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
+        gameState.wifeWantsQuorn = true;
+        render();
+      }
+    }
+
+    // --- BLACKOUT LOGIC ---
+    function checkForBlackout() {
+      if (gameState.drunk >= 10 && gameState.location !== "Home") {
+        blackoutToBed();
+      }
+    }
+
+    function blackoutToBed() {
+      gameState.drunk = 10;
+      gameState.location = "Home";
+      addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
+      addLog("You have only fragments of the evening, but at least you made it home.");
+      render();
+    }
 
     // --- ACTION HANDLERS ---
     function performAction(actionId) {
@@ -399,10 +435,11 @@
           gameState.drunk = clamp(gameState.drunk + 1, 0, 10);
           break;
 
-        // NISPY
+        // NISPY (food reduces drunk by 3)
         case "nispy_meal":
           addLog("You order a gloriously beige meal. Future you will have opinions.");
           gameState.satiation = clamp(gameState.satiation + 2, 0, 10);
+          gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
           break;
         case "nispy_salt":
           addLog("You ask for extra salt. They hand you a sachet the size of a small pillow.");
@@ -426,7 +463,7 @@
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
-        // LEVY BAKERY (cash gate!)
+        // LEVY BAKERY (food reduces drunk by 3, cash gate)
         case "levy_mixed":
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
@@ -434,6 +471,7 @@
             addLog("You buy a mixed Samoon. This is the crescendo of the night.");
             gameState.eatenSamoon = true;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
+            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
             // Spend all cash on Samoon
             gameState.hasCash = false;
           }
@@ -445,18 +483,25 @@
             addLog("You buy a Falafel Samoon. Glorious, messy, perfect.");
             gameState.eatenSamoon = true;
             gameState.satiation = clamp(gameState.satiation + 3, 0, 10);
+            gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
             // Spend all cash on Samoon
             gameState.hasCash = false;
           }
           break;
 
-        // TESCO
+        // TESCO (Quorn reduces drunk, with wife quest)
         case "tesco_kitchen_roll":
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
         case "tesco_quorn":
-          addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
+          if (gameState.wifeWantsQuorn) {
+            addLog("You dutifully buy Quorn chicken nuggies. Your wife will be pleased (or at least less annoyed).");
+            gameState.wifeWantsQuorn = false;
+          } else {
+            addLog("You grab a bag of Quorn chicken nuggies. Future you will thank you (or not).");
+          }
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          gameState.drunk = clamp(gameState.drunk - 3, 0, 10);
           break;
 
         // ATM NEW LOGIC
@@ -501,18 +546,23 @@
         // END OF NIGHT
         case "end_night":
           endNight();
-          break;
-
+          render();
+          return; // don't trigger random events after end-night
         // RESTART
         case "restart_game":
           window.location.reload();
-          break;
+          return;
 
         default:
           addLog("You do something indescribable. (Action not implemented.)");
       }
 
-      render();
+      checkForBlackout();
+      if (gameState.location !== "Home") {
+        maybeRandomEvent();
+      } else {
+        render();
+      }
     }
 
     function endNight() {
@@ -521,7 +571,6 @@
 
       addLog("=== END OF NIGHT ===");
 
-      // Outcome
       const hasSamoon = gameState.eatenSamoon;
       const hasCardNow = gameState.hasCard && !gameState.cardLost;
 
@@ -544,7 +593,7 @@
         " / Card: " + (hasCardNow ? "Safely with you" : "Not with you")
       );
 
-      // Light flavour based on stats
+      // Flavour based on stats
       if (gameState.drunk >= 8) {
         addLog("You are very much at the ‘singing to the kebab’ stage of the evening.");
       } else if (gameState.drunk <= 2) {
@@ -556,8 +605,6 @@
       } else if (gameState.satiation <= 2) {
         addLog("You probably should have eaten more than that.");
       }
-
-      render();
     }
 
     // --- RENDERING ---
@@ -599,13 +646,16 @@
         choicesEl.appendChild(btn);
       });
 
+      // Show latest actions at the top
       logEl.innerHTML = "";
-      gameState.log.slice(-10).forEach(entry => {
+      const recent = gameState.log.slice(-10).reverse(); // newest first
+      recent.forEach(entry => {
         const div = document.createElement("div");
         div.className = "log-entry";
         div.textContent = "• " + entry;
         logEl.appendChild(div);
       });
+      logEl.scrollTop = 0;
     }
 
     function handleChoice(index) {
@@ -625,6 +675,10 @@
 
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
+        checkForBlackout();
+        if (gameState.location !== "Home") {
+          maybeRandomEvent();
+        }
         render();
       } else if (action.type === "action") {
         performAction(action.id);
@@ -635,20 +689,6 @@
       gameState.log.push(text);
     }
 
-    // --- MUSIC AUTOPLAY LOGIC ---
-    function tryPlayMusic() {
-      const audio = document.getElementById("bgMusic");
-      const musicControl = document.getElementById("musicControl");
-
-      audio.play().then(() => {
-        // Autoplay success, keep button hidden
-        musicControl.style.display = "none";
-      }).catch(() => {
-        // Autoplay blocked – show "Enable music" button
-        musicControl.style.display = "block";
-      });
-    }
-
     // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
@@ -656,19 +696,10 @@
       handleChoice(choiceIndex);
     });
 
-    // Start game + attempt music
+    // Start game
     window.addEventListener("load", () => {
       addLog("You step out onto Stockport Road. The night begins.");
       render();
-      tryPlayMusic();
-
-      // If user clicks "Enable music"
-      const musicButton = document.getElementById("musicButton");
-      const audio = document.getElementById("bgMusic");
-      musicButton.addEventListener("click", () => {
-        audio.play();
-        document.getElementById("musicControl").style.display = "none";
-      });
     });
   </script>
 </body>
