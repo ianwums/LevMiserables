@@ -45,7 +45,7 @@
 
     .header-row {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
       gap: 8px;
       margin-bottom: 6px;
@@ -62,27 +62,6 @@
       font-size: 0.9rem;
       color: var(--muted);
       margin-bottom: 10px;
-    }
-
-    .header-buttons {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .header-button {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--accent-soft);
-      color: var(--text);
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .header-button:hover {
-      background: var(--accent-soft-hover);
-      border-color: var(--muted);
     }
 
     .status-bar {
@@ -325,31 +304,6 @@
       margin-bottom: 2px;
     }
 
-    .highscores {
-      margin-top: 10px;
-      padding-top: 6px;
-      border-top: 1px dashed var(--log-border);
-      font-size: 0.8rem;
-      color: var(--muted-strong);
-      display: none;
-    }
-
-    .highscores-title {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .highscores-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-    }
-
-    .highscores-list li {
-      margin-bottom: 2px;
-      font-family: "Fira Code", monospace;
-    }
-
     /* Full-screen overlays */
     .censored-overlay,
     .death-overlay,
@@ -464,13 +418,9 @@
         <div class="title">LEV MISERABLES</div>
         <div class="subtitle">A Drinking Game</div>
       </div>
-      <div class="header-buttons">
-        <button id="highScoresToggle" class="header-button">Show High Scores</button>
-      </div>
     </div>
 
     <div class="status-bar">
-      <div><strong>Player:</strong> <span id="statusNickname"></span></div>
       <div><strong>Location:</strong> <span id="statusLocation"></span></div>
       <div><strong>Cash:</strong> <span id="statusCash"></span></div>
       <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
@@ -504,11 +454,6 @@
         <div class="summary">
           <div class="summary-title">Session Summary</div>
           <ul class="summary-list" id="sessionSummary"></ul>
-
-          <div id="highScoresPanel" class="highscores">
-            <div class="highscores-title">High Scores (This Browser)</div>
-            <ul id="highScoresList" class="highscores-list"></ul>
-          </div>
         </div>
       </div>
     </div>
@@ -538,7 +483,6 @@
     // --- GAME STATE ---
     const gameState = {
       location: "Stockport Road",
-      nickname: "",
       hasCash: false,
       hasCard: true,
       cardInMachine: false,
@@ -635,37 +579,6 @@
         gameState.samoonCount +
         gameState.wifeNuggiesFulfilled
       );
-    }
-
-    // --- LOCAL STORAGE SCOREBOARD ---
-    function saveScoreToLocalStorage(nickname, score) {
-      try {
-        const raw = localStorage.getItem("levmiserables_scores");
-        let scores = raw ? JSON.parse(raw) : [];
-
-        scores.push({
-          nickname,
-          score,
-          date: new Date().toLocaleString()
-        });
-
-        scores.sort((a, b) => b.score - a.score);
-        scores = scores.slice(0, 10);
-
-        localStorage.setItem("levmiserables_scores", JSON.stringify(scores));
-      } catch (e) {
-        console.warn("Could not save scores:", e);
-      }
-    }
-
-    function loadScoresFromLocalStorage() {
-      try {
-        const raw = localStorage.getItem("levmiserables_scores");
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        console.warn("Could not load scores:", e);
-        return [];
-      }
     }
 
     // --- DRUNK HELPERS ---
@@ -1276,7 +1189,7 @@
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
         render();
-      }, 7000); // 7 seconds of YOU DIED glory
+      }, 7000);
     }
 
     // --- ANTIQUES MINI-GAME ---
@@ -1684,11 +1597,6 @@
       );
       addLog("Total score for tonight: " + totalScore);
 
-      // Save to local high scores
-      if (gameState.nickname) {
-        saveScoreToLocalStorage(gameState.nickname, totalScore);
-      }
-
       if (gameState.drunk >= 8) {
         addLog("You are very much at the ‘singing to the kebab’ stage of the evening.");
       } else if (gameState.drunk <= 2) {
@@ -1702,27 +1610,6 @@
       }
     }
 
-    // --- RENDER HIGH SCORES ---
-    function renderHighScores() {
-      const listEl = document.getElementById("highScoresList");
-      listEl.innerHTML = "";
-      const scores = loadScoresFromLocalStorage();
-
-      if (!scores.length) {
-        const li = document.createElement("li");
-        li.textContent = "No scores yet. Go have a night out.";
-        listEl.appendChild(li);
-        return;
-      }
-
-      scores.forEach((entry, index) => {
-        const li = document.createElement("li");
-        const rank = (index + 1).toString().padStart(2, "0");
-        li.textContent = `${rank}. ${entry.nickname} — ${entry.score} pts (${entry.date})`;
-        listEl.appendChild(li);
-      });
-    }
-
     // --- RENDERING ---
     function render() {
       const loc = locations[gameState.location];
@@ -1731,7 +1618,6 @@
       const descEl = document.getElementById("description");
       const choicesEl = document.getElementById("choices");
       const karaokeChoicesEl = document.getElementById("karaokeChoices");
-      const statusNicknameEl = document.getElementById("statusNickname");
       const statusLocationEl = document.getElementById("statusLocation");
       const statusCashEl = document.getElementById("statusCash");
       const statusCardEl = document.getElementById("statusCard");
@@ -1743,7 +1629,6 @@
       const gameOverBanner = document.getElementById("gameOverBanner");
       const wifeStatusEl = document.getElementById("wifeStatus");
 
-      statusNicknameEl.textContent = gameState.nickname || "(no name)";
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
 
@@ -1868,9 +1753,6 @@
         li.textContent = text;
         summaryEl.appendChild(li);
       });
-
-      // High scores (live)
-      renderHighScores();
     }
 
     function handleChoice(actionsList, index) {
@@ -1944,60 +1826,9 @@
     // Painting overlay close
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
-    // High Scores toggle
-    document.getElementById("highScoresToggle").addEventListener("click", () => {
-      const panel = document.getElementById("highScoresPanel");
-      const btn = document.getElementById("highScoresToggle");
-      const isVisible = panel.style.display === "block";
-      panel.style.display = isVisible ? "none" : "block";
-      btn.textContent = isVisible ? "Show High Scores" : "Hide High Scores";
-    });
-
-    // --- NICKNAME PROMPT ON LOAD ---
-    function promptForNickname() {
-      const last = localStorage.getItem("levmiserables_lastNickname") || "";
-
-      let nickname = "";
-      while (true) {
-        const message = last
-          ? `Enter your nickname for the scoreboard.\n(Leave blank to reuse "${last}")`
-          : "Enter your nickname for the scoreboard:";
-        let input = prompt(message);
-
-        if (input === null) {
-          // User hit cancel – just loop again to force a value.
-          continue;
-        }
-
-        input = input.trim();
-
-        if (!input && last) {
-          nickname = last;
-          break;
-        }
-
-        if (!input) {
-          alert("Nickname cannot be empty.");
-          continue;
-        }
-
-        if (input.length > 20) {
-          alert("Nickname must be 20 characters or fewer.");
-          continue;
-        }
-
-        nickname = input;
-        break;
-      }
-
-      gameState.nickname = nickname;
-      localStorage.setItem("levmiserables_lastNickname", nickname);
-    }
-
     // Start game
     window.addEventListener("load", () => {
-      promptForNickname();
-      addLog("Welcome, " + gameState.nickname + "! You step out onto Stockport Road. The night begins.");
+      addLog("You step out onto Stockport Road. The night begins.");
       render();
     });
   </script>
