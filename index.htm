@@ -144,19 +144,16 @@
       width: 100%;
       max-width: 260px;
       aspect-ratio: 1 / 1;
-      background: #111;
+      background: #ffeb3b;      /* yellow */
+      color: #0d47a1;           /* blue */
       border-radius: 8px;
       border: 2px solid var(--border);
-      display: none;
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 1.1rem;        /* big text */
+      font-weight: 700;
       padding: 10px;
-    }
-
-    body.light .karaoke-screen {
-      background: #fdfdfd;
     }
 
     .description {
@@ -290,14 +287,14 @@
     }
   </style>
 </head>
-<body>
+<body class="light">
   <div class="game-container">
     <div class="header-row">
       <div>
         <div class="title">LEV MISERABLES</div>
         <div class="subtitle">A Drinking Game</div>
       </div>
-      <button id="themeToggle">Switch to Light Mode</button>
+      <button id="themeToggle">Switch to Dark Mode</button>
     </div>
 
     <div class="status-bar">
@@ -349,8 +346,8 @@
       foodCount: 0,
       matchesWatched: 0,
       tipsyWarned: false,
-      // karaoke state
-      karaokeChoosingSong: false
+      karaokeChoosingSong: false,
+      songsPerformed: 0
     };
 
     const karaokeSongs = [
@@ -822,8 +819,8 @@
 
     function chooseKaraokeSong(songTitle) {
       gameState.karaokeChoosingSong = false;
+      gameState.songsPerformed += 1;
 
-      // Rockin Ronnie commentary based on drunk level
       if (gameState.drunk > 7) {
         addLog(`You pick "${songTitle}". Rockin Ronnie sighs, 'You're far too drunk for this,' but cues it up anyway.`);
       } else {
@@ -832,12 +829,11 @@
 
       changeDrunk(1);
 
-      // Show song on TV screen with notes for 5 seconds
       const screen = document.getElementById("karaokeScreen");
       screen.style.display = "flex";
-      screen.textContent = `📺 ♪ ${songTitle} ♪`;
+      screen.textContent = `♪ ${songTitle} ♪`;
 
-      render(); // update log and hide song list
+      render();
 
       setTimeout(() => {
         screen.style.display = "none";
@@ -1088,7 +1084,6 @@
         choicesEl.appendChild(btn);
       });
 
-      // Karaoke song list (only when choosing and in The Union)
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
         karaokeChoicesEl.style.display = "flex";
@@ -1130,6 +1125,7 @@
         `Drinks consumed (including shots, pints, etc): ${gameState.drinksCount}`,
         `Food items eaten: ${gameState.foodCount}`,
         `Matches watched at The Union: ${gameState.matchesWatched}`,
+        `Songs performed: ${gameState.songsPerformed}`,
         `Samoon eaten: ${gameState.eatenSamoon ? "Yes" : "No"}`,
         `Wife currently waiting on Quorn nuggies: ${gameState.wifeWantsQuorn ? "Yes" : "No"}`
       ];
@@ -1147,7 +1143,6 @@
       if (!action) return;
 
       if (action.type === "move") {
-        // Cancel karaoke song selection if you wander off mid-binder
         gameState.karaokeChoosingSong = false;
 
         if (currentLocationName === "ATM" && gameState.cardInMachine) {
