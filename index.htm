@@ -320,7 +320,7 @@
     .overlay-text {
       font-size: 3rem;
       font-weight: 900;
-      letter-spacing: 0.3em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       color: #ff5252;
       border: 4px solid #ff5252;
@@ -373,7 +373,7 @@
       }
       .overlay-text {
         font-size: 2rem;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.1em;
       }
     }
 
@@ -416,7 +416,7 @@
     <div class="header-row">
       <div>
         <div class="title">LEV MISERABLES</div>
-        <div classsubtitle">A Drinking Game</div>
+        <div class="subtitle">A Drinking Game</div>
       </div>
     </div>
 
@@ -459,14 +459,16 @@
     </div>
   </div>
 
-  <!-- Taccy Vom Vom overlay -->
+  <!-- Taccy Vom / Sam Smiths overlay -->
   <div id="censoredOverlay" class="censored-overlay">
-    <div class="overlay-text">CENSORED</div>
+    <div id="censoredText" class="overlay-text">CENSORED</div>
   </div>
 
   <!-- Death overlay -->
   <div id="deathOverlay" class="death-overlay">
-    <div class="overlay-text">YOU DIED</div>
+    <div class="overlay-text">
+      YOU DIED - THE PENALTY FOR LEAVING LEVENSHULME IS TO BE HUNG BY THE NECK UNTIL YOU ARE DEAD
+    </div>
   </div>
 
   <!-- Painting overlay -->
@@ -499,7 +501,8 @@
       karaokeChoosingSong: false,
       songsPerformed: 0,
       antiquesChosen: [],
-      antiquesRoundComplete: false
+      antiquesRoundComplete: false,
+      diedByLeavingLevy: false
     };
 
     const karaokeSongs = [
@@ -881,7 +884,16 @@
       },
 
       "Home": {
-        ascii: String.raw`
+        // We swap this ASCII dynamically depending on diedByLeavingLevy.
+        ascii: "", // placeholder, decided in render()
+        description: "You finally make it home. A small cat eyes you knowingly. The night in Levenshulme fades into a fuzzy memory.",
+        actions: [
+          { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
+        ]
+      }
+    };
+
+    const homeHouseAscii = String.raw`
                  your house, some time later
 
                  ________________________
@@ -898,13 +910,27 @@
 
    You finally make it home. Stockport Road is a rumour outside the window now,
    and the night settles into memory.
-        `,
-        description: "You finally make it home. A small cat eyes you knowingly. The night in Levenshulme fades into a fuzzy memory.",
-        actions: [
-          { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
-        ]
-      }
-    };
+    `;
+
+    const homeGraveAscii = String.raw`
+                 your house, some time later
+
+                 ________________________
+                |                      |
+                |       R.I.P          |
+                |      ________        |
+                |     /        \       |
+                |    /  HERE    \      |
+                |   /  LIES     \      |
+                |   |  A FOOL   |      |
+                |   | WHO LEFT  |      |
+                |   | LEVENS.   |      |
+                |   |__________ |      |
+                |______________________|
+
+   The streetlights flicker in the distance. Somewhere back on Stockport Road,
+   the night goes on without you.
+    `;
 
     // --- MATCH SIMULATION WITH TV ---
     function simulateMatch() {
@@ -1130,17 +1156,26 @@
       }, 5000);
     }
 
-    // --- TACCY VOM VOM ---
-    function doTaccyVomVom() {
+    // --- GENERIC FULL-SCREEN MESSAGE OVERLAY (CENSORED / SAM SMITHS) ---
+    function showOverlayMessage(text, durationMs, callback) {
       const overlay = document.getElementById("censoredOverlay");
+      const label = document.getElementById("censoredText");
+      label.textContent = text;
       overlay.style.display = "flex";
 
       setTimeout(() => {
         overlay.style.display = "none";
+        if (callback) callback();
+      }, durationMs);
+    }
+
+    // --- TACCY VOM VOM ---
+    function doTaccyVomVom() {
+      showOverlayMessage("CENSORED", 3000, () => {
         addLog("That was disgusting! But at least we can eat something now.");
         gameState.satiation = 0;  // drunk unchanged
         render();
-      }, 3000);
+      });
     }
 
     // --- LEAVE LEVENSHULME (YOU DIED) ---
@@ -1151,6 +1186,7 @@
       setTimeout(() => {
         overlay.style.display = "none";
         gameState.location = "Home";
+        gameState.diedByLeavingLevy = true;
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
         render();
@@ -1191,27 +1227,40 @@
 
       if (madeProfit) {
         addLog(`At auction, your ${first} and ${second} spark a bidding war. You make a tidy profit.`);
+        // Winning money -> now have cash
+        gameState.hasCash = true;
       } else {
         addLog(`At auction, your ${first} and ${second} fall flat. You make a painful loss and a new enemy in the trade.`);
+        // Losing money -> if you had cash, you lose it
+        if (gameState.hasCash) {
+          gameState.hasCash = false;
+        }
       }
 
       gameState.antiquesRoundComplete = true;
     }
 
-    // --- Talleyrand Painting ---
+    // --- Talleyrand Painting (Bruegel Peasant Dance homage) ---
     const paintingAscii = String.raw`
-             .-''''-.
-           .'  .-.   '.
-          /   /   \    \
-         |   |  .-. ;   |
-         |   |  |  |   |
-         |   |  '-' /   |
-          \   \__.'   /
-           '._     _.'
-              '-.-'
+   Pieter Bruegel the Elder: Peasant Dance c. 1568
 
-      A tasteful abstract painting of a man wondering
-      if he has had one drink too many, or one too few.
+        /\/\/\   thatched roofs, tavern front
+       /      \__________________________
+      |  🍺  peasants at long table      |
+      |  🎺  bagpiper, jugs, elbows      |
+      |__________________________________|
+           \   couples turning  /
+            \  arms linked    /
+             \   💃  🕺     /
+              \            /
+               \  path   /
+                \      /
+                 \    /
+          trees   \  /   little church
+           🌳      \/      ⛪
+
+   A village feast in full swing: dancers in the lane, drinkers by the tavern,
+   and the church watching from a distance.
     `;
 
     function showPainting() {
@@ -1452,16 +1501,37 @@
           changeDrunk(-1);
           break;
         case "bluebell_phone":
-          addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
-          gameState.location = "Stockport Road";
+          showOverlayMessage(
+            "YOU HAVE VIOLATED A SAM SMITHS RULE. GET OUT!",
+            2500,
+            () => {
+              addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
+              gameState.location = "Stockport Road";
+              render();
+            }
+          );
           break;
         case "bluebell_knickers":
-          addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
-          gameState.location = "Stockport Road";
+          showOverlayMessage(
+            "YOU HAVE VIOLATED A SAM SMITHS RULE. GET OUT!",
+            2500,
+            () => {
+              addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
+              gameState.location = "Stockport Road";
+              render();
+            }
+          );
           break;
         case "bluebell_willies":
-          addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
-          gameState.location = "Stockport Road";
+          showOverlayMessage(
+            "YOU HAVE VIOLATED A SAM SMITHS RULE. GET OUT!",
+            2500,
+            () => {
+              addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
+              gameState.location = "Stockport Road";
+              render();
+            }
+          );
           break;
 
         // ANTIQUES
@@ -1598,7 +1668,13 @@
         gameOverBanner.style.display = "none";
       }
 
-      asciiEl.textContent = loc.ascii;
+      // Home ASCII: house vs gravestone variant
+      if (gameState.location === "Home") {
+        asciiEl.textContent = gameState.diedByLeavingLevy ? homeGraveAscii : homeHouseAscii;
+      } else {
+        asciiEl.textContent = loc.ascii;
+      }
+
       descEl.textContent = loc.description;
 
       // Karaoke song list
