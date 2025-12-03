@@ -304,8 +304,10 @@
       margin-bottom: 2px;
     }
 
-    /* Taccy Vom Vom overlay */
-    .censored-overlay {
+    /* Full-screen overlays */
+    .censored-overlay,
+    .death-overlay,
+    .painting-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.95);
@@ -315,7 +317,7 @@
       z-index: 9999;
     }
 
-    .censored-overlay-text {
+    .overlay-text {
       font-size: 3rem;
       font-weight: 900;
       letter-spacing: 0.3em;
@@ -323,6 +325,65 @@
       color: #ff5252;
       border: 4px solid #ff5252;
       padding: 20px 40px;
+      text-align: center;
+    }
+
+    .painting-content {
+      max-width: 90vw;
+      max-height: 90vh;
+      background: #111;
+      color: #eee;
+      border-radius: 12px;
+      border: 3px solid #eee;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .painting-body {
+      flex: 1;
+      overflow: auto;
+      white-space: pre;
+      font-family: "Fira Code", monospace;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .painting-close {
+      align-self: flex-end;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      background: #333;
+      color: #eee;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .painting-close:hover {
+      background: #555;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        flex-direction: column;
+      }
+      .log {
+        max-height: 200px;
+      }
+      .overlay-text {
+        font-size: 2rem;
+        letter-spacing: 0.15em;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .ascii-art { font-size: 11px; }
+      .status-bar > div { flex: 1 1 100%; }
+      .overlay-text {
+        font-size: 1.6rem;
+        letter-spacing: 0.12em;
+      }
     }
 
     /* Big red Taccy Vom button */
@@ -348,28 +409,6 @@
       transform: translateY(0);
       box-shadow: none;
     }
-
-    @media (max-width: 800px) {
-      .layout {
-        flex-direction: column;
-      }
-      .log {
-        max-height: 200px;
-      }
-      .censored-overlay-text {
-        font-size: 2rem;
-        letter-spacing: 0.15em;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .ascii-art { font-size: 11px; }
-      .status-bar > div { flex: 1 1 100%; }
-      .censored-overlay-text {
-        font-size: 1.6rem;
-        letter-spacing: 0.12em;
-      }
-    }
   </style>
 </head>
 <body>
@@ -377,7 +416,7 @@
     <div class="header-row">
       <div>
         <div class="title">LEV MISERABLES</div>
-        <div class="subtitle">A Drinking Game</div>
+        <div classsubtitle">A Drinking Game</div>
       </div>
     </div>
 
@@ -422,7 +461,20 @@
 
   <!-- Taccy Vom Vom overlay -->
   <div id="censoredOverlay" class="censored-overlay">
-    <div class="censored-overlay-text">CENSORED</div>
+    <div class="overlay-text">CENSORED</div>
+  </div>
+
+  <!-- Death overlay -->
+  <div id="deathOverlay" class="death-overlay">
+    <div class="overlay-text">YOU DIED</div>
+  </div>
+
+  <!-- Painting overlay -->
+  <div id="paintingOverlay" class="painting-overlay">
+    <div class="painting-content">
+      <pre id="paintingBody" class="painting-body"></pre>
+      <button id="paintingClose" class="painting-close">Close painting</button>
+    </div>
   </div>
 
   <script>
@@ -445,7 +497,9 @@
       foodCount: 0,
       matchesWatched: 0,
       karaokeChoosingSong: false,
-      songsPerformed: 0
+      songsPerformed: 0,
+      antiquesChosen: [],
+      antiquesRoundComplete: false
     };
 
     const karaokeSongs = [
@@ -458,6 +512,14 @@
       "RONAN KEATING - ROLLERCOASTER",
       "DAVID BOWIE - BLACKSTAR",
       "QUEEN (FEAT DAVID BOWIE) - UNDER PRESSURE"
+    ];
+
+    const antiquesList = [
+      "Victorian porcelain doll",
+      "Art Deco cocktail cabinet",
+      "1920s brass telescope",
+      "Mid-century modern armchair",
+      "Mysterious cracked oil painting"
     ];
 
     function clamp(value, min, max) {
@@ -575,6 +637,7 @@
 
           [ ISCA ]       [ UNION ]       [ LEVY BAKERY ]
           [ NISPY ]      [ TESCO ]       [ ATM ]
+          [ TALLEYRAND ] [ BLUEBELL ]    [ ANTIQUES ]
 
    Somewhere between glory and shame, you must choose your route.
         `,
@@ -586,6 +649,10 @@
           { label: "Go to Levy Bakery", type: "move", target: "Levy Bakery" },
           { label: "Go to Tesco", type: "move", target: "Tesco" },
           { label: "Go to ATM", type: "move", target: "ATM" },
+          { label: "Go to Talleyrand", type: "move", target: "Talleyrand" },
+          { label: "Go to Bluebell", type: "move", target: "Bluebell" },
+          { label: "Go to Levenshulme Antiques Market", type: "move", target: "Levenshulme Antiques Market" },
+          { label: "Leave Levenshulme", type: "action", id: "leave_levenshulme" },
           { label: "Go home and end the night", type: "action", id: "end_night" }
         ]
       },
@@ -736,6 +803,80 @@
           { label: "Take cash", type: "action", id: "atm_take_cash" },
           { label: "Retrieve card", type: "action", id: "atm_retrieve_card" },
           { label: "Leave back to Stockport Road", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Talleyrand": {
+        ascii: String.raw`
+             _______________________________
+            |          TALLEYRAND          |
+            |------------------------------|
+            |  framed paintings, candle    |
+            |  lit tables, odd jazz       |
+            |                              |
+            |   [ BAR ]       [ STAGE ]   |
+            |______________________________|
+
+   A cosy bar filled with art and the low murmur of conversations that may or may
+   not be about Marxism.
+        `,
+        description: "Soft lights, framed paintings and the sense that everyone else here has a PhD in something obscure.",
+        actions: [
+          { label: "Look at Painting", type: "action", id: "talleyrand_painting" },
+          { label: "Buy a beer", type: "action", id: "talleyrand_beer" },
+          { label: "Buy pretzels", type: "action", id: "talleyrand_pretzels" },
+          { label: "Leave Talleyrand", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Bluebell": {
+        ascii: String.raw`
+             _______________________________
+            |           BLUEBELL           |
+            |------------------------------|
+            |  snug little bar, low roof   |
+            |  Mark the landlord watching  |
+            |  everything from the corner. |
+            |                              |
+            |   [ BAR ]       [ SNUG ]     |
+            |______________________________|
+
+   A proper pub. No nonsense, no phones, and absolutely no shouting about underwear.
+        `,
+        description: "Mark the landlord is giving you the look over. Choose your next move carefully.",
+        actions: [
+          { label: "Buy a beer", type: "action", id: "bluebell_beer" },
+          { label: "Buy salt and vinegar crisps", type: "action", id: "bluebell_sv" },
+          { label: "Buy cheese and onion crisps", type: "action", id: "bluebell_co" },
+          { label: "Buy sweet chilli nuts", type: "action", id: "bluebell_chilli" },
+          { label: "Use phone", type: "action", id: "bluebell_phone" },
+          { label: "Shout 'Knickers'", type: "action", id: "bluebell_knickers" },
+          { label: "Shout 'Willies'", type: "action", id: "bluebell_willies" },
+          { label: "Leave Bluebell", type: "move", target: "Stockport Road" }
+        ]
+      },
+
+      "Levenshulme Antiques Market": {
+        ascii: String.raw`
+             _________________________________
+            | LEVENSHULME ANTIQUES MARKET    |
+            |--------------------------------|
+            |  trestle tables piled high     |
+            |  with curios, clocks, lamps,   |
+            |  and things that might be art. |
+            |________________________________|
+
+   Rows of stalls stretch out in front of you. Somewhere here is a bargain – or a
+   terrible, terrible investment.
+        `,
+        description: "You weave between stalls of curios and clutter. Choose two antiques you fancy your chances with at auction.",
+        actions: [
+          { label: "Choose Victorian porcelain doll", type: "action", id: "antiques_1" },
+          { label: "Choose Art Deco cocktail cabinet", type: "action", id: "antiques_2" },
+          { label: "Choose 1920s brass telescope", type: "action", id: "antiques_3" },
+          { label: "Choose Mid-century modern armchair", type: "action", id: "antiques_4" },
+          { label: "Choose Mysterious cracked oil painting", type: "action", id: "antiques_5" },
+          { label: "Leave the Antiques Market", type: "move", target: "Stockport Road" }
         ]
       },
 
@@ -921,6 +1062,8 @@
     // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
       if (gameState.location === "Home") return;
+      if (gameState.location === "Levenshulme Antiques Market") return; // mini-game is a safe bubble
+
       const roll = Math.random();
       const current = gameState.location;
 
@@ -969,7 +1112,6 @@
         addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
       }
 
-      // Karaoke no longer changes drunk level
       const screen = document.getElementById("karaokeScreen");
       screen.style.display = "flex";
       screen.textContent = `♪ ${songTitle} ♪`;
@@ -999,6 +1141,88 @@
         gameState.satiation = 0;  // drunk unchanged
         render();
       }, 3000);
+    }
+
+    // --- LEAVE LEVENSHULME (YOU DIED) ---
+    function leaveLevenshulme() {
+      const overlay = document.getElementById("deathOverlay");
+      overlay.style.display = "flex";
+
+      setTimeout(() => {
+        overlay.style.display = "none";
+        gameState.location = "Home";
+        addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
+        endNight();
+        render();
+      }, 2500);
+    }
+
+    // --- ANTIQUES MINI-GAME ---
+    function pickAntique(index) {
+      if (gameState.location !== "Levenshulme Antiques Market") return;
+
+      if (gameState.antiquesRoundComplete) {
+        addLog("You've already taken your chances at auction. You can always come back another time.");
+        return;
+      }
+
+      if (gameState.antiquesChosen.length >= 2) {
+        addLog("You've already chosen two antiques. Head to the auction result or leave the market.");
+        return;
+      }
+
+      const item = antiquesList[index];
+      if (gameState.antiquesChosen.includes(item)) {
+        addLog("You've already picked that one. The dealer eyes you suspiciously.");
+        return;
+      }
+
+      gameState.antiquesChosen.push(item);
+      addLog(`You select: ${item}.`);
+
+      if (gameState.antiquesChosen.length === 2) {
+        resolveAntiquesAuction();
+      }
+    }
+
+    function resolveAntiquesAuction() {
+      const [first, second] = gameState.antiquesChosen;
+      const madeProfit = Math.random() < 0.5;
+
+      if (madeProfit) {
+        addLog(`At auction, your ${first} and ${second} spark a bidding war. You make a tidy profit.`);
+      } else {
+        addLog(`At auction, your ${first} and ${second} fall flat. You make a painful loss and a new enemy in the trade.`);
+      }
+
+      gameState.antiquesRoundComplete = true;
+    }
+
+    // --- Talleyrand Painting ---
+    const paintingAscii = String.raw`
+             .-''''-.
+           .'  .-.   '.
+          /   /   \    \
+         |   |  .-. ;   |
+         |   |  |  |   |
+         |   |  '-' /   |
+          \   \__.'   /
+           '._     _.'
+              '-.-'
+
+      A tasteful abstract painting of a man wondering
+      if he has had one drink too many, or one too few.
+    `;
+
+    function showPainting() {
+      const overlay = document.getElementById("paintingOverlay");
+      const body = document.getElementById("paintingBody");
+      body.textContent = paintingAscii;
+      overlay.style.display = "flex";
+    }
+
+    function hidePainting() {
+      document.getElementById("paintingOverlay").style.display = "none";
     }
 
     // --- ACTION HANDLERS ---
@@ -1125,7 +1349,6 @@
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
         case "tesco_quorn":
-          // Quorn nuggies IGNORE satiation-10 guard
           if (gameState.wifeWantsQuorn) {
             addLog("You dutifully buy Quorn chicken nuggies. Your wife will be pleased (or at least less annoyed).");
             gameState.wifeWantsQuorn = false;
@@ -1181,6 +1404,83 @@
           doTaccyVomVom();
           break;
 
+        // LEAVE LEVENSHULME
+        case "leave_levenshulme":
+          leaveLevenshulme();
+          return;
+
+        // TALLEYRAND
+        case "talleyrand_painting":
+          showPainting();
+          break;
+        case "talleyrand_beer":
+          addLog("You buy a beer at Talleyrand and contemplate the art a little more intensely.");
+          changeDrunk(2);
+          break;
+        case "talleyrand_pretzels":
+          if (!canEatMore()) break;
+          addLog("You nibble on pretzels. Salty knots of vague respectability.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+
+        // BLUEBELL
+        case "bluebell_beer":
+          addLog("You buy a beer. Mark gives a curt nod.");
+          changeDrunk(2);
+          break;
+        case "bluebell_sv":
+          if (!canEatMore()) break;
+          addLog("You tuck into salt and vinegar crisps. Sharp enough to wake the dead.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "bluebell_co":
+          if (!canEatMore()) break;
+          addLog("You choose cheese and onion crisps. Bold choice in close quarters.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "bluebell_chilli":
+          if (!canEatMore()) break;
+          addLog("You order sweet chilli nuts. Your mouth tingles; Mark remains unmoved.");
+          gameState.foodCount += 1;
+          gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
+          changeDrunk(-1);
+          break;
+        case "bluebell_phone":
+          addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
+          gameState.location = "Stockport Road";
+          break;
+        case "bluebell_knickers":
+          addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
+          gameState.location = "Stockport Road";
+          break;
+        case "bluebell_willies":
+          addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
+          gameState.location = "Stockport Road";
+          break;
+
+        // ANTIQUES
+        case "antiques_1":
+          pickAntique(0);
+          break;
+        case "antiques_2":
+          pickAntique(1);
+          break;
+        case "antiques_3":
+          pickAntique(2);
+          break;
+        case "antiques_4":
+          pickAntique(3);
+          break;
+        case "antiques_5":
+          pickAntique(4);
+          break;
+
         // END OF NIGHT
         case "end_night":
           endNight();
@@ -1196,7 +1496,7 @@
           addLog("You do something indescribable. (Action not implemented.)");
       }
 
-      if (gameState.location !== "Home") {
+      if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
         maybeRandomEvent();
       }
       render();
@@ -1397,9 +1697,24 @@
           gameState.cardLost = true;
         }
 
+        if (
+          currentLocationName === "Levenshulme Antiques Market" &&
+          gameState.antiquesChosen.length < 2
+        ) {
+          addLog("You can't leave the Antiques Market until you've chosen two antiques.");
+          render();
+          return;
+        }
+
+        if (currentLocationName === "Levenshulme Antiques Market") {
+          // Reset antiques mini-game for next visit
+          gameState.antiquesChosen = [];
+          gameState.antiquesRoundComplete = false;
+        }
+
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
-        if (gameState.location !== "Home") {
+        if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
           maybeRandomEvent();
         }
         render();
@@ -1434,6 +1749,9 @@
 
       handleChoice(actionsToShow, choiceIndex);
     });
+
+    // Painting overlay close
+    document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
     // Start game
     window.addEventListener("load", () => {
