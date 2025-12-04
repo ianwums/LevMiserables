@@ -597,6 +597,20 @@ if (muteButton) {
   });
 }
 
+// Stop and reset all playing audio
+function stopAllAudio() {
+  // Theme
+  themeAudio.pause();
+  themeAudio.currentTime = 0;
+
+  // Karaoke
+  if (currentKaraokeAudio) {
+    currentKaraokeAudio.pause();
+    currentKaraokeAudio.currentTime = 0;
+    // keep currentKaraokeAudio reference so we can reuse it if needed
+  }
+}
+    
 // Wire up the mute button
 if (muteButton) {
   muteButton.addEventListener("click", () => {
@@ -1273,11 +1287,8 @@ function chooseKaraokeSong(songTitle) {
   const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
 
   if (isUnderPressure) {
-    // Stop any previous karaoke track
-    if (currentKaraokeAudio) {
-      currentKaraokeAudio.pause();
-      currentKaraokeAudio = null;
-    }
+    // Stop any other audio before starting this track
+    stopAllAudio();
 
     const audio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3");
     currentKaraokeAudio = audio;
@@ -1286,7 +1297,6 @@ function chooseKaraokeSong(songTitle) {
     const finishSong = () => {
       if (!screen) return;
       screen.style.display = "none";
-      // Only log once per song
       const crowdLikesIt = Math.random() < 0.5;
       if (crowdLikesIt) {
         addLog("The crowd whoops and cheers. For tonight, you're a star.");
@@ -1299,7 +1309,10 @@ function chooseKaraokeSong(songTitle) {
 
     audio.addEventListener("ended", finishSong);
     audio.addEventListener("error", () => {
-      // If audio fails, fall back to a 5s display
+      setTimeout(finishSong, 5000);
+    });
+
+    audio.play().catch(() => {
       setTimeout(finishSong, 5000);
     });
 
@@ -2002,6 +2015,9 @@ function chooseKaraokeSong(songTitle) {
 
   // Ensure mute state is applied before any audio
   applyMuteState();
+
+  // Stop anything that might be playing (future-proofing)
+  stopAllAudio();
 
   // First log + render
   addLog("You step out onto Stockport Road. The night begins.");
