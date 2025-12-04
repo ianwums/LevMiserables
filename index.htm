@@ -45,7 +45,7 @@
       transform: translateY(0);
       box-shadow: none;
     }
-    
+
     body {
       margin: 0;
       padding: 0;
@@ -210,7 +210,7 @@
       image-rendering: pixelated;
       transition: opacity 0.4s ease;
     }
-    
+
     .karaoke-screen {
       display: none;
       width: 100%;
@@ -583,149 +583,96 @@
   </div>
 
   <script>
-    // --- AUDIO MANAGER ---
+    // --- AUDIO SETUP ---
 
-    const audioBaseUrl = "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/";
+    const AUDIO_BASE = "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/";
+    const IMG_BASE   = "https://levmiserables.s3.eu-north-1.amazonaws.com/images/";
 
-    const audioManager = {
-      tracks: {},
-      muted: false,
-      currentAmbience: null,
+    // Theme audio (title screen)
+    const themeAudio = new Audio(AUDIO_BASE + "lev_mis_theme.mp3");
+    themeAudio.loop = false;
+    themeAudio.volume = 1.0;
 
-      register(name, fileName, options = {}) {
-        const audio = new Audio(audioBaseUrl + fileName);
-        audio.loop = !!options.loop;
-        audio.volume = options.volume != null ? options.volume : 1.0;
-        audio.muted = this.muted;
-        this.tracks[name] = audio;
-        return audio;
-      },
+    // Karaoke audio (for current song, if any)
+    let currentKaraokeAudio = null;
 
-      setMuted(m) {
-        this.muted = m;
-        Object.values(this.tracks).forEach(a => {
-          a.muted = m;
-        });
-      },
+    // Ambient loop per location
+    let ambientAudio = null;
 
-      stop(name) {
-        const a = this.tracks[name];
-        if (!a) return;
-        a.pause();
-        try { a.currentTime = 0; } catch (e) {}
-      },
-
-      stopAll() {
-        Object.values(this.tracks).forEach(a => {
-          a.pause();
-          try { a.currentTime = 0; } catch (e) {}
-        });
-        this.currentAmbience = null;
-      },
-
-      playLoop(name) {
-        // Stop everything, then play this as ambient loop
-        this.stopAll();
-        const a = this.tracks[name];
-        if (!a) return;
-        a.loop = true;
-        try { a.currentTime = 0; } catch (e) {}
-        a.muted = this.muted;
-        a.play().catch(() => {});
-        this.currentAmbience = name;
-      },
-
-      playOnce(name, onEnded) {
-        // Stop everything, then play one-shot
-        this.stopAll();
-        const a = this.tracks[name];
-        if (!a) return;
-        a.loop = false;
-        try { a.currentTime = 0; } catch (e) {}
-        a.muted = this.muted;
-        if (onEnded) {
-          a.onended = () => {
-            a.onended = null;
-            onEnded();
-          };
-        } else {
-          a.onended = null;
-        }
-        a.play().catch(() => {
-          // if playback fails we still call onEnded after a short delay
-          if (onEnded) {
-            setTimeout(onEnded, 3000);
-          }
-        });
-      }
-    };
-
-    // Register all known audio tracks
-    audioManager.register("theme", "lev_mis_theme.mp3");
-    audioManager.register("karaoke_under_pressure", "karaoke_under_pressure.mp3");
-
-    audioManager.register("amb_stockport_road", "stockport_road_ambience.mp3", { loop: true });
-    audioManager.register("amb_union", "union_ambience.mp3", { loop: true });
-    audioManager.register("amb_nispy", "nispy_kitchen.mp3", { loop: true });
-    audioManager.register("amb_isca", "isca_bar.mp3", { loop: true });
-    audioManager.register("amb_levy", "levy_bakery_grill.mp3", { loop: true });
-    audioManager.register("amb_tesco", "tesco_nightshop.mp3", { loop: true });
-    audioManager.register("amb_atm", "atm_street_corner.mp3", { loop: true });
-    audioManager.register("amb_talleyrand", "talleyrand_bar.mp3", { loop: true });
-    audioManager.register("amb_bluebell", "bluebell_pub.mp3", { loop: true });
-    audioManager.register("amb_antiques", "antiques_market_floor.mp3", { loop: true });
-
-    // Helper: map location -> ambience track name (or null)
-    function getAmbienceForLocation(locationName) {
-      switch (locationName) {
-        case "Stockport Road":
-          return "amb_stockport_road";
-        case "The Union":
-          return "amb_union";
-        case "Nispy":
-          return "amb_nispy";
-        case "Isca":
-          return "amb_isca";
-        case "Levy Bakery":
-          return "amb_levy";
-        case "Tesco":
-          return "amb_tesco";
-        case "ATM":
-          return "amb_atm";
-        case "Talleyrand":
-          return "amb_talleyrand";
-        case "Bluebell":
-          return "amb_bluebell";
-        case "Levenshulme Antiques Market":
-          return "amb_antiques";
-        case "Home":
-        default:
-          return null;
-      }
-    }
-
-    function updateAmbienceForCurrentLocation() {
-      const trackName = getAmbienceForLocation(gameState.location);
-      if (!trackName) {
-        audioManager.stopAll();
-        return;
-      }
-      audioManager.playLoop(trackName);
-    }
-
-    // --- GLOBAL UI / MUTE ---
-
+    // Global mute state
     let isMuted = false;
 
-    const titleScreen = document.getElementById("titleScreen");
-    const startButton = document.getElementById("startButton");
+    const titleScreen   = document.getElementById("titleScreen");
+    const startButton   = document.getElementById("startButton");
     const gameContainer = document.getElementById("gameContainer");
-    const muteButton = document.getElementById("muteButton");
+    const muteButton    = document.getElementById("muteButton");
 
+    // Location → ambience file
+    const locationAmbience = {
+      "Stockport Road":             "stockport_road_ambience.mp3",
+      "The Union":                  "union_ambience.mp3",
+      "Nispy":                      "nispy_kitchen.mp3",
+      "Isca":                       "isca_bar.mp3",
+      "Levy Bakery":                "levy_bakery_grill.mp3",
+      "Tesco":                      "tesco_nightshop.mp3",
+      "ATM":                        "atm_street_corner.mp3",
+      "Talleyrand":                 "talleyrand_bar.mp3",
+      "Bluebell":                   "bluebell_pub.mp3",
+      "Levenshulme Antiques Market":"antiques_market_floor.mp3"
+      // No ambience for "Home"
+    };
+
+    function applyMuteState() {
+      themeAudio.muted = isMuted;
+      if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
+      if (ambientAudio) ambientAudio.muted = isMuted;
+    }
+
+    function stopAmbience() {
+      if (ambientAudio) {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
+        ambientAudio = null;
+      }
+    }
+
+    // Stop and reset all playing audio
+    function stopAllAudio() {
+      // Theme
+      themeAudio.pause();
+      themeAudio.currentTime = 0;
+
+      // Karaoke
+      if (currentKaraokeAudio) {
+        currentKaraokeAudio.pause();
+        currentKaraokeAudio.currentTime = 0;
+        currentKaraokeAudio = null;
+      }
+
+      // Ambience
+      stopAmbience();
+    }
+
+    function updateAmbienceForLocation(locName) {
+      stopAmbience();
+
+      const file = locationAmbience[locName];
+      if (!file) return;
+
+      const audio = new Audio(AUDIO_BASE + file);
+      ambientAudio = audio;
+      audio.loop = true;
+      audio.muted = isMuted;
+      audio.play().catch(() => {
+        console.warn("Ambience autoplay blocked for location:", locName);
+      });
+    }
+
+    // Mute button
     if (muteButton) {
       muteButton.addEventListener("click", () => {
         isMuted = !isMuted;
-        audioManager.setMuted(isMuted);
+        applyMuteState();
         muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
       });
     }
@@ -1317,9 +1264,15 @@
         lines,
         2000,
         () => {
-          if (winner === "Manchester United" || winner === "Aston Villa") {
+          // After the commentary finishes, resolve the “free drink” effects
+          if (winner === "Manchester United") {
+            // Devil’s Guinness: show pint + increment drinks
+            awardGuinnessAtUnion("The Devil is as good as his word. ");
+          } else if (winner === "Aston Villa") {
+            // Wife buys a Guinness – player just gets the booze effect
             changeDrunk(2);
           }
+
           setTimeout(() => {
             footballScreen.style.display = "none";
             footballScreen.innerHTML = "";
@@ -1343,22 +1296,29 @@
       const roll = Math.random();
       const current = gameState.location;
 
+      // Devil → Union (unchanged, 5%)
       if (roll < 0.05 && current !== "The Union") {
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
-        updateAmbienceForCurrentLocation();
+        updateAmbienceForLocation(gameState.location);
         render();
-      } else if (roll < 0.10 && current !== "Levy Bakery") {
+      }
+      // Potts → Levy Bakery, now ~30% as likely as before (was 0.05 band, now 0.015)
+      else if (roll < 0.065 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
-        updateAmbienceForCurrentLocation();
+        updateAmbienceForLocation(gameState.location);
         render();
-      } else if (roll < 0.15) {
+      }
+      // Wife text
+      else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
-      } else if (roll < 0.20 && current !== "The Union") {
+      }
+      // Random “go watch a match at The Union”
+      else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
-        updateAmbienceForCurrentLocation();
+        updateAmbienceForLocation(gameState.location);
         render();
         simulateMatch();
         return;
@@ -1369,7 +1329,7 @@
     function blackoutToBed() {
       gameState.drunk = 10;
       gameState.location = "Home";
-      updateAmbienceForCurrentLocation();
+      updateAmbienceForLocation(gameState.location);
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
     }
@@ -1398,9 +1358,17 @@
 
       render();
 
+      // Special handling for UNDER PRESSURE with real audio
       const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
 
       if (isUnderPressure) {
+        // Stop any other audio before starting this track
+        stopAllAudio();
+
+        const audio = new Audio(AUDIO_BASE + "karaoke_under_pressure.mp3");
+        currentKaraokeAudio = audio;
+        audio.muted = isMuted;
+
         const finishSong = () => {
           if (!screen) return;
           screen.style.display = "none";
@@ -1410,13 +1378,22 @@
           } else {
             addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
           }
+          currentKaraokeAudio = null;
           render();
-          // Resume ambience for current location (likely The Union)
-          updateAmbienceForCurrentLocation();
+
+          // Resume ambience for current location after karaoke
+          updateAmbienceForLocation(gameState.location);
         };
 
-        audioManager.playOnce("karaoke_under_pressure", finishSong);
+        audio.addEventListener("ended", finishSong);
+        audio.addEventListener("error", () => {
+          setTimeout(finishSong, 5000);
+        });
 
+        audio.play().catch(() => {
+          // If play is blocked for some reason, fall back to a 5s display
+          setTimeout(finishSong, 5000);
+        });
       } else {
         // Default behaviour for other songs: 5 second display, no audio
         setTimeout(() => {
@@ -1463,7 +1440,7 @@
         overlay.style.display = "none";
         gameState.location = "Home";
         gameState.diedByLeavingLevy = true;
-        updateAmbienceForCurrentLocation();
+        updateAmbienceForLocation(gameState.location);
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
         render();
@@ -1549,29 +1526,37 @@
       document.getElementById("paintingOverlay").style.display = "none";
     }
 
+    // --- AWARD A GUINNESS (shared helper for Union + Devil) ---
+    function awardGuinnessAtUnion(logLinePrefix) {
+      const decorations = ["heart", "musical note", "shamrock"];
+      const decoration = pickRandom(decorations);
+
+      const prefix = logLinePrefix || "";
+      addLog(`${prefix}Mary hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
+
+      // This increments drinksCount too:
+      changeDrunk(2);
+
+      // Add a new full pint to the array
+      gameState.unionPints.push({ state: "full" });
+      const thisIndex = gameState.unionPints.length - 1;
+      render(); // show the new full pint immediately
+
+      // After 3 seconds, fade/swap to empty (if we're still tracking it)
+      setTimeout(() => {
+        const pint = gameState.unionPints[thisIndex];
+        if (!pint) return; // safety
+        pint.state = "empty";
+        render();
+      }, 3000);
+    }
+
     // --- ACTION HANDLERS ---
     function performAction(actionId) {
       switch (actionId) {
         // UNION
         case "union_guinness": {
-          const decorations = ["heart", "musical note", "shamrock"];
-          const decoration = pickRandom(decorations);
-          addLog(`Mary hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
-          changeDrunk(2);
-
-          // Add a new full pint to the array
-          gameState.unionPints.push({ state: "full" });
-          const thisIndex = gameState.unionPints.length - 1;
-          render(); // show the new full pint immediately
-
-          // After 3 seconds, swap to empty (if we're still tracking it)
-          setTimeout(() => {
-            const pint = gameState.unionPints[thisIndex];
-            if (!pint) return; // safety
-            pint.state = "empty";
-            render();
-          }, 3000);
-
+          awardGuinnessAtUnion();
           break;
         }
         case "union_karaoke":
@@ -1796,7 +1781,7 @@
             () => {
               addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
               gameState.location = "Stockport Road";
-              updateAmbienceForCurrentLocation();
+              updateAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1808,7 +1793,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
-              updateAmbienceForCurrentLocation();
+              updateAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1820,7 +1805,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
-              updateAmbienceForCurrentLocation();
+              updateAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1866,7 +1851,7 @@
 
     function endNight() {
       gameState.location = "Home";
-      updateAmbienceForCurrentLocation();
+      updateAmbienceForLocation(gameState.location);
 
       addLog("=== END OF NIGHT ===");
 
@@ -1910,21 +1895,21 @@
     function render() {
       const loc = locations[gameState.location];
 
-      const asciiEl = document.getElementById("asciiArt");
-      const descEl = document.getElementById("description");
-      const choicesEl = document.getElementById("choices");
+      const asciiEl          = document.getElementById("asciiArt");
+      const descEl           = document.getElementById("description");
+      const choicesEl        = document.getElementById("choices");
       const karaokeChoicesEl = document.getElementById("karaokeChoices");
       const statusLocationEl = document.getElementById("statusLocation");
-      const statusCashEl = document.getElementById("statusCash");
-      const statusCardEl = document.getElementById("statusCard");
-      const statusDrunkEl = document.getElementById("statusDrunk");
-      const statusSatiationEl = document.getElementById("statusSatiation");
-      const statusScoreEl = document.getElementById("statusScore");
-      const logEl = document.getElementById("log");
-      const summaryEl = document.getElementById("sessionSummary");
-      const gameOverBanner = document.getElementById("gameOverBanner");
-      const wifeStatusEl = document.getElementById("wifeStatus");
-      const pintsContainer = document.getElementById("pintsContainer");
+      const statusCashEl     = document.getElementById("statusCash");
+      const statusCardEl     = document.getElementById("statusCard");
+      const statusDrunkEl    = document.getElementById("statusDrunk");
+      const statusSatiationEl= document.getElementById("statusSatiation");
+      const statusScoreEl    = document.getElementById("statusScore");
+      const logEl            = document.getElementById("log");
+      const summaryEl        = document.getElementById("sessionSummary");
+      const gameOverBanner   = document.getElementById("gameOverBanner");
+      const wifeStatusEl     = document.getElementById("wifeStatus");
+      const pintsContainer   = document.getElementById("pintsContainer");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -1977,8 +1962,8 @@
         gameState.unionPints.forEach(pint => {
           const img = document.createElement("img");
           img.src = pint.state === "full"
-            ? "https://levmiserables.s3.eu-north-1.amazonaws.com/images/guinesspint_full.gif"
-            : "https://levmiserables.s3.eu-north-1.amazonaws.com/images/guinesspint_empty.gif";
+            ? IMG_BASE + "guinesspint_full.gif"
+            : IMG_BASE + "guinesspint_empty.gif";
           img.alt = pint.state === "full" ? "Full pint of Guinness" : "Empty pint of Guinness";
           pintsContainer.appendChild(img);
         });
@@ -2101,9 +2086,8 @@
         }
 
         gameState.location = action.target;
+        updateAmbienceForLocation(gameState.location);
         addLog("You head to " + action.target + ".");
-        updateAmbienceForCurrentLocation();
-
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
           maybeRandomEvent();
         }
@@ -2149,16 +2133,22 @@
       titleScreen.style.display = "none";
       gameContainer.style.display = "flex";
 
-      // Apply mute state
-      audioManager.setMuted(isMuted);
+      // Ensure mute state is applied before any audio
+      applyMuteState();
 
-      // Initial log + render
+      // Stop anything that might be playing (future-proofing)
+      stopAllAudio();
+
+      // First log + render
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
-      // Play theme once, then start Stockport Road ambience
-      audioManager.playOnce("theme", () => {
-        updateAmbienceForCurrentLocation();
+      // Start ambience for initial location
+      updateAmbienceForLocation(gameState.location);
+
+      // Play theme once (over the very start of the game if desired)
+      themeAudio.play().catch(() => {
+        console.warn("Theme autoplay blocked even after Start click.");
       });
     });
   </script>
