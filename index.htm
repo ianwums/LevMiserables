@@ -572,10 +572,18 @@ themeAudio.volume = 1.0;
 // Global mute state
 let isMuted = false;
 
+const titleScreen = document.getElementById("titleScreen");
+const startButton = document.getElementById("startButton");
+const gameContainer = document.getElementById("gameContainer");
+const muteButton = document.getElementById("muteButton");
+
+// Apply mute/unmute to all audio we manage
 function applyMuteState() {
   themeAudio.muted = isMuted;
+  // Later we’ll also mute/unmute other audio objects here
+}
 
-
+// Wire up the mute button
 if (muteButton) {
   muteButton.addEventListener("click", () => {
     isMuted = !isMuted;
@@ -583,16 +591,6 @@ if (muteButton) {
     muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
   });
 }
-
-  
-  // Later, when we add more audio, we’ll also mute/unmute them here.
-}
-
-    
-const titleScreen = document.getElementById("titleScreen");
-const startButton = document.getElementById("startButton");
-const gameContainer = document.getElementById("gameContainer");
-const muteButton = document.getElementById("muteButton");
 
     // --- GAME STATE ---
     const gameState = {
