@@ -572,6 +572,9 @@ themeAudio.volume = 1.0;
 // Global mute state
 let isMuted = false;
 
+// Karaoke audio (for current song, if any)
+let currentKaraokeAudio = null;
+
 const titleScreen = document.getElementById("titleScreen");
 const startButton = document.getElementById("startButton");
 const gameContainer = document.getElementById("gameContainer");
@@ -580,7 +583,18 @@ const muteButton = document.getElementById("muteButton");
 // Apply mute/unmute to all audio we manage
 function applyMuteState() {
   themeAudio.muted = isMuted;
-  // Later we’ll also mute/unmute other audio objects here
+  if (currentKaraokeAudio) {
+    currentKaraokeAudio.muted = isMuted;
+  }
+}
+
+// Wire up the mute button
+if (muteButton) {
+  muteButton.addEventListener("click", () => {
+    isMuted = !isMuted;
+    applyMuteState();
+    muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
+  });
 }
 
 // Wire up the mute button
@@ -1239,33 +1253,75 @@ if (muteButton) {
       render();
     }
 
-    function chooseKaraokeSong(songTitle) {
-      gameState.karaokeChoosingSong = false;
-      gameState.songsPerformed += 1;
+function chooseKaraokeSong(songTitle) {
+  gameState.karaokeChoosingSong = false;
+  gameState.songsPerformed += 1;
 
-      if (gameState.drunk > 7) {
-        addLog(`You pick "${songTitle}". Rockin Ronnie sighs, 'You're far too drunk for this,' but cues it up anyway.`);
-      } else {
-        addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
-      }
+  if (gameState.drunk > 7) {
+    addLog(`You pick "${songTitle}". Rockin Ronnie sighs, 'You're far too drunk for this,' but cues it up anyway.`);
+  } else {
+    addLog(`You pick "${songTitle}". Rockin Ronnie reluctantly puts your song on and you absolutely butcher it.`);
+  }
 
-      const screen = document.getElementById("karaokeScreen");
-      screen.style.display = "flex";
-      screen.textContent = `♪ ${songTitle} ♪`;
+  const screen = document.getElementById("karaokeScreen");
+  screen.style.display = "flex";
+  screen.textContent = `♪ ${songTitle} ♪`;
 
-      render();
+  render();
 
-      setTimeout(() => {
-        screen.style.display = "none";
-        const crowdLikesIt = Math.random() < 0.5;
-        if (crowdLikesIt) {
-          addLog("The crowd whoops and cheers. For tonight, you're a star.");
-        } else {
-          addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
-        }
-        render();
-      }, 5000);
+  // Special handling for UNDER PRESSURE with real audio
+  const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
+
+  if (isUnderPressure) {
+    // Stop any previous karaoke track
+    if (currentKaraokeAudio) {
+      currentKaraokeAudio.pause();
+      currentKaraokeAudio = null;
     }
+
+    const audio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3");
+    currentKaraokeAudio = audio;
+    audio.muted = isMuted;
+
+    const finishSong = () => {
+      if (!screen) return;
+      screen.style.display = "none";
+      // Only log once per song
+      const crowdLikesIt = Math.random() < 0.5;
+      if (crowdLikesIt) {
+        addLog("The crowd whoops and cheers. For tonight, you're a star.");
+      } else {
+        addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
+      }
+      currentKaraokeAudio = null;
+      render();
+    };
+
+    audio.addEventListener("ended", finishSong);
+    audio.addEventListener("error", () => {
+      // If audio fails, fall back to a 5s display
+      setTimeout(finishSong, 5000);
+    });
+
+    audio.play().catch(() => {
+      // If play is blocked for some reason, fall back to a 5s display
+      setTimeout(finishSong, 5000);
+    });
+
+  } else {
+    // Default behaviour for other songs: 5 second display, no audio
+    setTimeout(() => {
+      screen.style.display = "none";
+      const crowdLikesIt = Math.random() < 0.5;
+      if (crowdLikesIt) {
+        addLog("The crowd whoops and cheers. For tonight, you're a star.");
+      } else {
+        addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
+      }
+      render();
+    }, 5000);
+  }
+}
 
     // --- GENERIC FULL-SCREEN MESSAGE OVERLAY (CENSORED / SAM SMITHS) ---
     function showOverlayMessage(text, durationMs, callback) {
