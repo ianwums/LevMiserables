@@ -32,6 +32,51 @@
       transition: background 0.2s ease, color 0.2s ease;
     }
 
+    /* Title screen */
+    #titleScreen {
+      position: fixed;
+      inset: 0;
+      background: #111;
+      color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      text-align: center;
+    }
+
+    #titleScreen h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    #startButton {
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 10px;
+      background: #ffeb3b;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #startButton:hover {
+      background: #fff176;
+    }
+
+    /* Game container wrapper (hidden until Start) */
+    #gameContainer {
+      display: none;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
     .game-container {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -41,6 +86,7 @@
       width: 95%;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
       transition: background 0.2s ease, border-color 0.2s ease;
+      margin: 20px auto;
     }
 
     .header-row {
@@ -412,48 +458,58 @@
   </style>
 </head>
 <body>
-  <div class="game-container">
-    <div class="header-row">
-      <div>
-        <div class="title">LEV MISERABLES</div>
-        <div class="subtitle">A Drinking Game</div>
+
+  <!-- TITLE SCREEN -->
+  <div id="titleScreen">
+    <h1>LEV MISERABLES<br/>A Drinking Game</h1>
+    <button id="startButton">Start</button>
+  </div>
+
+  <!-- MAIN GAME WRAPPER (HIDDEN UNTIL START) -->
+  <div id="gameContainer">
+    <div class="game-container">
+      <div class="header-row">
+        <div>
+          <div class="title">LEV MISERABLES</div>
+          <div class="subtitle">A Drinking Game</div>
+        </div>
       </div>
-    </div>
 
-    <div class="status-bar">
-      <div><strong>Location:</strong> <span id="statusLocation"></span></div>
-      <div><strong>Cash:</strong> <span id="statusCash"></span></div>
-      <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
-      <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
-      <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
-      <div><strong>Score:</strong> <span id="statusScore"></span></div>
-    </div>
+      <div class="status-bar">
+        <div><strong>Location:</strong> <span id="statusLocation"></span></div>
+        <div><strong>Cash:</strong> <span id="statusCash"></span></div>
+        <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
+        <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
+        <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
+        <div><strong>Score:</strong> <span id="statusScore"></span></div>
+      </div>
 
-    <div class="layout">
-      <div class="main-panel">
-        <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
-        <pre id="asciiArt" class="ascii-art"></pre>
+      <div class="layout">
+        <div class="main-panel">
+          <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
+          <pre id="asciiArt" class="ascii-art"></pre>
 
-        <div class="screens-row">
-          <div id="karaokeScreen" class="karaoke-screen"></div>
-          <div id="footballScreen" class="football-screen"></div>
+          <div class="screens-row">
+            <div id="karaokeScreen" class="karaoke-screen"></div>
+            <div id="footballScreen" class="football-screen"></div>
+          </div>
+
+          <div id="description" class="description"></div>
+          <!-- Karaoke choices ABOVE normal choices -->
+          <div id="karaokeChoices" class="karaoke-choices"></div>
+          <div id="choices" class="choices"></div>
         </div>
 
-        <div id="description" class="description"></div>
-        <!-- Karaoke choices ABOVE normal choices -->
-        <div id="karaokeChoices" class="karaoke-choices"></div>
-        <div id="choices" class="choices"></div>
-      </div>
+        <div class="log-panel">
+          <div id="wifeStatus" class="wife-status-banner inactive"></div>
+          <div class="log-title">Action Log</div>
+          <div id="log" class="log"></div>
+          <div class="hint">Press 1–9 to choose an option.</div>
 
-      <div class="log-panel">
-        <div id="wifeStatus" class="wife-status-banner inactive"></div>
-        <div class="log-title">Action Log</div>
-        <div id="log" class="log"></div>
-        <div class="hint">Press 1–9 to choose an option.</div>
-
-        <div class="summary">
-          <div class="summary-title">Session Summary</div>
-          <ul class="summary-list" id="sessionSummary"></ul>
+          <div class="summary">
+            <div class="summary-title">Session Summary</div>
+            <ul class="summary-list" id="sessionSummary"></ul>
+          </div>
         </div>
       </div>
     </div>
@@ -480,6 +536,15 @@
   </div>
 
   <script>
+    // THEME AUDIO FOR TITLE SCREEN
+    const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
+    themeAudio.loop = false;
+    themeAudio.volume = 1.0;
+
+    const titleScreen = document.getElementById("titleScreen");
+    const startButton = document.getElementById("startButton");
+    const gameContainer = document.getElementById("gameContainer");
+
     // --- GAME STATE ---
     const gameState = {
       location: "Stockport Road",
@@ -1826,10 +1891,20 @@
     // Painting overlay close
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
-    // Start game
-    window.addEventListener("load", () => {
+    // START BUTTON HANDLER (replaces old window.load)
+    startButton.addEventListener("click", () => {
+      // Hide title, show game
+      titleScreen.style.display = "none";
+      gameContainer.style.display = "flex";
+
+      // First log + render
       addLog("You step out onto Stockport Road. The night begins.");
       render();
+
+      // Play theme once
+      themeAudio.play().catch(() => {
+        console.warn("Theme autoplay blocked even after Start click.");
+      });
     });
   </script>
 </body>
