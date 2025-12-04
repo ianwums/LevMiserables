@@ -195,6 +195,22 @@
       margin-bottom: 10px;
     }
 
+    /* Guinness pints in The Union */
+    .pints-container {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .pints-container img {
+      width: 50px;
+      height: auto;
+      image-rendering: pixelated;
+      transition: opacity 0.4s ease;
+    }
+    
     .karaoke-screen {
       display: none;
       width: 100%;
@@ -512,7 +528,6 @@
         <div><strong>Score:</strong> <span id="statusScore"></span></div>
       </div>
 
-      <div class="layout">
         <div class="main-panel">
           <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
           <pre id="asciiArt" class="ascii-art"></pre>
@@ -521,6 +536,9 @@
             <div id="karaokeScreen" class="karaoke-screen"></div>
             <div id="footballScreen" class="football-screen"></div>
           </div>
+
+          <!-- Guinness pints in The Union -->
+          <div id="pintsContainer" class="pints-container"></div>
 
           <div id="description" class="description"></div>
           <!-- Karaoke choices ABOVE normal choices -->
@@ -621,7 +639,7 @@ if (muteButton) {
 }
 
     // --- GAME STATE ---
-    const gameState = {
+        const gameState = {
       location: "Stockport Road",
       hasCash: false,
       hasCard: true,
@@ -642,7 +660,8 @@ if (muteButton) {
       songsPerformed: 0,
       antiquesChosen: [],
       antiquesRoundComplete: false,
-      diedByLeavingLevy: false
+      diedByLeavingLevy: false,
+      unionPints: []   // <-- NEW: track pints in The Union
     };
 
     const karaokeSongs = [
@@ -1456,11 +1475,25 @@ function chooseKaraokeSong(songTitle) {
     function performAction(actionId) {
       switch (actionId) {
         // UNION
-        case "union_guinness": {
+                case "union_guinness": {
           const decorations = ["heart", "musical note", "shamrock"];
           const decoration = pickRandom(decorations);
           addLog(`Mary hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
           changeDrunk(2);
+
+          // Add a new full pint to the array
+          gameState.unionPints.push({ state: "full" });
+          const thisIndex = gameState.unionPints.length - 1;
+          render(); // show the new full pint immediately
+
+          // After 3 seconds, fade/swap to empty (if we're still tracking it)
+          setTimeout(() => {
+            const pint = gameState.unionPints[thisIndex];
+            if (!pint) return; // safety
+            pint.state = "empty";
+            render();
+          }, 3000);
+
           break;
         }
         case "union_karaoke":
@@ -1809,6 +1842,7 @@ function chooseKaraokeSong(songTitle) {
       const summaryEl = document.getElementById("sessionSummary");
       const gameOverBanner = document.getElementById("gameOverBanner");
       const wifeStatusEl = document.getElementById("wifeStatus");
+      const pintsContainer = document.getElementById("pintsContainer");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -1855,6 +1889,23 @@ function chooseKaraokeSong(songTitle) {
 
       descEl.textContent = loc.description;
 
+ // Guinness pints display in The Union
+      pintsContainer.innerHTML = "";
+      if (gameState.location === "The Union") {
+        gameState.unionPints.forEach(pint => {
+          const img = document.createElement("img");
+          img.src = pint.state === "full"
+            ? "https://levmiserables.s3.eu-north-1.amazonaws.com/images/guinesspint_full.gif"
+            : "https://levmiserables.s3.eu-north-1.amazonaws.com/images/guinesspint_empty.gif";
+          img.alt = pint.state === "full" ? "Full pint of Guinness" : "Empty pint of Guinness";
+          pintsContainer.appendChild(img);
+        });
+      }
+
+      // Karaoke song list
+      karaokeChoicesEl.innerHTML = "";
+      ...
+      
       // Karaoke song list
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
@@ -1966,6 +2017,13 @@ function chooseKaraokeSong(songTitle) {
           gameState.antiquesRoundComplete = false;
         }
 
+
+// If we are leaving The Union, clear the pint glasses
+        if (currentLocationName === "The Union" && action.target !== "The Union") {
+          gameState.unionPints = [];
+        }
+
+        
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
