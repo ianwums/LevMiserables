@@ -583,49 +583,149 @@
   </div>
 
   <script>
-    // THEME AUDIO FOR TITLE SCREEN
-    const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
-    themeAudio.loop = false;
-    themeAudio.volume = 1.0;
+    // --- AUDIO MANAGER ---
 
-    // Global mute state
+    const audioBaseUrl = "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/";
+
+    const audioManager = {
+      tracks: {},
+      muted: false,
+      currentAmbience: null,
+
+      register(name, fileName, options = {}) {
+        const audio = new Audio(audioBaseUrl + fileName);
+        audio.loop = !!options.loop;
+        audio.volume = options.volume != null ? options.volume : 1.0;
+        audio.muted = this.muted;
+        this.tracks[name] = audio;
+        return audio;
+      },
+
+      setMuted(m) {
+        this.muted = m;
+        Object.values(this.tracks).forEach(a => {
+          a.muted = m;
+        });
+      },
+
+      stop(name) {
+        const a = this.tracks[name];
+        if (!a) return;
+        a.pause();
+        try { a.currentTime = 0; } catch (e) {}
+      },
+
+      stopAll() {
+        Object.values(this.tracks).forEach(a => {
+          a.pause();
+          try { a.currentTime = 0; } catch (e) {}
+        });
+        this.currentAmbience = null;
+      },
+
+      playLoop(name) {
+        // Stop everything, then play this as ambient loop
+        this.stopAll();
+        const a = this.tracks[name];
+        if (!a) return;
+        a.loop = true;
+        try { a.currentTime = 0; } catch (e) {}
+        a.muted = this.muted;
+        a.play().catch(() => {});
+        this.currentAmbience = name;
+      },
+
+      playOnce(name, onEnded) {
+        // Stop everything, then play one-shot
+        this.stopAll();
+        const a = this.tracks[name];
+        if (!a) return;
+        a.loop = false;
+        try { a.currentTime = 0; } catch (e) {}
+        a.muted = this.muted;
+        if (onEnded) {
+          a.onended = () => {
+            a.onended = null;
+            onEnded();
+          };
+        } else {
+          a.onended = null;
+        }
+        a.play().catch(() => {
+          // if playback fails we still call onEnded after a short delay
+          if (onEnded) {
+            setTimeout(onEnded, 3000);
+          }
+        });
+      }
+    };
+
+    // Register all known audio tracks
+    audioManager.register("theme", "lev_mis_theme.mp3");
+    audioManager.register("karaoke_under_pressure", "karaoke_under_pressure.mp3");
+
+    audioManager.register("amb_stockport_road", "stockport_road_ambience.mp3", { loop: true });
+    audioManager.register("amb_union", "union_ambience.mp3", { loop: true });
+    audioManager.register("amb_nispy", "nispy_kitchen.mp3", { loop: true });
+    audioManager.register("amb_isca", "isca_bar.mp3", { loop: true });
+    audioManager.register("amb_levy", "levy_bakery_grill.mp3", { loop: true });
+    audioManager.register("amb_tesco", "tesco_nightshop.mp3", { loop: true });
+    audioManager.register("amb_atm", "atm_street_corner.mp3", { loop: true });
+    audioManager.register("amb_talleyrand", "talleyrand_bar.mp3", { loop: true });
+    audioManager.register("amb_bluebell", "bluebell_pub.mp3", { loop: true });
+    audioManager.register("amb_antiques", "antiques_market_floor.mp3", { loop: true });
+
+    // Helper: map location -> ambience track name (or null)
+    function getAmbienceForLocation(locationName) {
+      switch (locationName) {
+        case "Stockport Road":
+          return "amb_stockport_road";
+        case "The Union":
+          return "amb_union";
+        case "Nispy":
+          return "amb_nispy";
+        case "Isca":
+          return "amb_isca";
+        case "Levy Bakery":
+          return "amb_levy";
+        case "Tesco":
+          return "amb_tesco";
+        case "ATM":
+          return "amb_atm";
+        case "Talleyrand":
+          return "amb_talleyrand";
+        case "Bluebell":
+          return "amb_bluebell";
+        case "Levenshulme Antiques Market":
+          return "amb_antiques";
+        case "Home":
+        default:
+          return null;
+      }
+    }
+
+    function updateAmbienceForCurrentLocation() {
+      const trackName = getAmbienceForLocation(gameState.location);
+      if (!trackName) {
+        audioManager.stopAll();
+        return;
+      }
+      audioManager.playLoop(trackName);
+    }
+
+    // --- GLOBAL UI / MUTE ---
+
     let isMuted = false;
-
-    // Karaoke audio (for current song, if any)
-    let currentKaraokeAudio = null;
 
     const titleScreen = document.getElementById("titleScreen");
     const startButton = document.getElementById("startButton");
     const gameContainer = document.getElementById("gameContainer");
     const muteButton = document.getElementById("muteButton");
 
-    // Apply mute/unmute to all audio we manage
-    function applyMuteState() {
-      themeAudio.muted = isMuted;
-      if (currentKaraokeAudio) {
-        currentKaraokeAudio.muted = isMuted;
-      }
-    }
-
-    // Stop and reset all playing audio
-    function stopAllAudio() {
-      // Theme
-      themeAudio.pause();
-      themeAudio.currentTime = 0;
-
-      // Karaoke
-      if (currentKaraokeAudio) {
-        currentKaraokeAudio.pause();
-        currentKaraokeAudio.currentTime = 0;
-        // Keep the reference; we'll replace it on next karaoke track
-      }
-    }
-
-    // Wire up the mute button (single handler)
     if (muteButton) {
       muteButton.addEventListener("click", () => {
         isMuted = !isMuted;
-        applyMuteState();
+        audioManager.setMuted(isMuted);
         muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
       });
     }
@@ -1246,16 +1346,19 @@
       if (roll < 0.05 && current !== "The Union") {
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
+        updateAmbienceForCurrentLocation();
         render();
       } else if (roll < 0.10 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
+        updateAmbienceForCurrentLocation();
         render();
       } else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
       } else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
+        updateAmbienceForCurrentLocation();
         render();
         simulateMatch();
         return;
@@ -1266,6 +1369,7 @@
     function blackoutToBed() {
       gameState.drunk = 10;
       gameState.location = "Home";
+      updateAmbienceForCurrentLocation();
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
     }
@@ -1294,17 +1398,9 @@
 
       render();
 
-      // Special handling for UNDER PRESSURE with real audio
       const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
 
       if (isUnderPressure) {
-        // Stop any other audio before starting this track
-        stopAllAudio();
-
-        const audio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3");
-        currentKaraokeAudio = audio;
-        audio.muted = isMuted;
-
         const finishSong = () => {
           if (!screen) return;
           screen.style.display = "none";
@@ -1314,19 +1410,12 @@
           } else {
             addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
           }
-          currentKaraokeAudio = null;
           render();
+          // Resume ambience for current location (likely The Union)
+          updateAmbienceForCurrentLocation();
         };
 
-        audio.addEventListener("ended", finishSong);
-        audio.addEventListener("error", () => {
-          setTimeout(finishSong, 5000);
-        });
-
-        audio.play().catch(() => {
-          // If play is blocked for some reason, fall back to a 5s display
-          setTimeout(finishSong, 5000);
-        });
+        audioManager.playOnce("karaoke_under_pressure", finishSong);
 
       } else {
         // Default behaviour for other songs: 5 second display, no audio
@@ -1374,6 +1463,7 @@
         overlay.style.display = "none";
         gameState.location = "Home";
         gameState.diedByLeavingLevy = true;
+        updateAmbienceForCurrentLocation();
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
         render();
@@ -1706,6 +1796,7 @@
             () => {
               addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
               gameState.location = "Stockport Road";
+              updateAmbienceForCurrentLocation();
               render();
             }
           );
@@ -1717,6 +1808,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
+              updateAmbienceForCurrentLocation();
               render();
             }
           );
@@ -1728,6 +1820,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
+              updateAmbienceForCurrentLocation();
               render();
             }
           );
@@ -1773,6 +1866,7 @@
 
     function endNight() {
       gameState.location = "Home";
+      updateAmbienceForCurrentLocation();
 
       addLog("=== END OF NIGHT ===");
 
@@ -2008,6 +2102,8 @@
 
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
+        updateAmbienceForCurrentLocation();
+
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
           maybeRandomEvent();
         }
@@ -2047,25 +2143,22 @@
     // Painting overlay close
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
-    // START BUTTON HANDLER (replaces old window.load)
+    // START BUTTON HANDLER
     startButton.addEventListener("click", () => {
       // Hide title, show game
       titleScreen.style.display = "none";
       gameContainer.style.display = "flex";
 
-      // Ensure mute state is applied before any audio
-      applyMuteState();
+      // Apply mute state
+      audioManager.setMuted(isMuted);
 
-      // Stop anything that might be playing (future-proofing)
-      stopAllAudio();
-
-      // First log + render
+      // Initial log + render
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
-      // Play theme once
-      themeAudio.play().catch(() => {
-        console.warn("Theme autoplay blocked even after Start click.");
+      // Play theme once, then start Stockport Road ambience
+      audioManager.playOnce("theme", () => {
+        updateAmbienceForCurrentLocation();
       });
     });
   </script>
