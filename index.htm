@@ -19,6 +19,33 @@
       --log-border: #ccc;
     }
 
+#muteButton {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.07s ease,
+    box-shadow 0.07s ease;
+}
+
+#muteButton:hover {
+  background: var(--accent-soft-hover);
+  border-color: var(--muted);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+#muteButton:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+    
     body {
       margin: 0;
       padding: 0;
@@ -468,12 +495,13 @@
   <!-- MAIN GAME WRAPPER (HIDDEN UNTIL START) -->
   <div id="gameContainer">
     <div class="game-container">
-      <div class="header-row">
-        <div>
-          <div class="title">LEV MISERABLES</div>
-          <div class="subtitle">A Drinking Game</div>
-        </div>
-      </div>
+<div class="header-row">
+  <div>
+    <div class="title">LEV MISERABLES</div>
+    <div class="subtitle">A Drinking Game</div>
+  </div>
+  <button id="muteButton">🔊 Mute</button>
+</div>
 
       <div class="status-bar">
         <div><strong>Location:</strong> <span id="statusLocation"></span></div>
@@ -536,14 +564,35 @@
   </div>
 
   <script>
-    // THEME AUDIO FOR TITLE SCREEN
-    const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
-    themeAudio.loop = false;
-    themeAudio.volume = 1.0;
+// THEME AUDIO FOR TITLE SCREEN
+const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
+themeAudio.loop = false;
+themeAudio.volume = 1.0;
 
-    const titleScreen = document.getElementById("titleScreen");
-    const startButton = document.getElementById("startButton");
-    const gameContainer = document.getElementById("gameContainer");
+// Global mute state
+let isMuted = false;
+
+function applyMuteState() {
+  themeAudio.muted = isMuted;
+
+
+if (muteButton) {
+  muteButton.addEventListener("click", () => {
+    isMuted = !isMuted;
+    applyMuteState();
+    muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
+  });
+}
+
+  
+  // Later, when we add more audio, we’ll also mute/unmute them here.
+}
+
+    
+const titleScreen = document.getElementById("titleScreen");
+const startButton = document.getElementById("startButton");
+const gameContainer = document.getElementById("gameContainer");
+const muteButton = document.getElementById("muteButton");
 
     // --- GAME STATE ---
     const gameState = {
@@ -1892,20 +1941,23 @@
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
     // START BUTTON HANDLER (replaces old window.load)
-    startButton.addEventListener("click", () => {
-      // Hide title, show game
-      titleScreen.style.display = "none";
-      gameContainer.style.display = "flex";
+   startButton.addEventListener("click", () => {
+  // Hide title, show game
+  titleScreen.style.display = "none";
+  gameContainer.style.display = "flex";
 
-      // First log + render
-      addLog("You step out onto Stockport Road. The night begins.");
-      render();
+  // Ensure mute state is applied before any audio
+  applyMuteState();
 
-      // Play theme once
-      themeAudio.play().catch(() => {
-        console.warn("Theme autoplay blocked even after Start click.");
-      });
-    });
+  // First log + render
+  addLog("You step out onto Stockport Road. The night begins.");
+  render();
+
+  // Play theme once
+  themeAudio.play().catch(() => {
+    console.warn("Theme autoplay blocked even after Start click.");
+  });
+});
   </script>
 </body>
 </html>
