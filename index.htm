@@ -96,6 +96,7 @@
     #gameContainer {
       display: none;
       width: 100%;
+      justify-content:中心;
       justify-content: center;
       align-items: flex-start;
     }
@@ -108,7 +109,6 @@
       max-width: 1100px;
       width: 95%;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-      transition: background 0.2s ease, border-color 0.2s ease;
       margin: 20px auto;
     }
 
@@ -607,38 +607,89 @@
   <script>
     // --- AUDIO SETUP ---
 
-    // Title theme
+    // Intro / title theme
     const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
     themeAudio.loop = false;
     themeAudio.volume = 1.0;
 
-    // New Talleyrand beer-taps song
+    // Location ambience (fill in with your actual filenames if different)
+    const ambienceAudio = {
+      "Stockport Road": new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/stockport_road_ambience.mp3"),
+      "The Union":      new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/the_union_ambience.mp3"),
+      "Nispy":          new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/nispy_ambience.mp3"),
+      "Isca":           new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/isca_ambience.mp3"),
+      "Levy Bakery":    new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/levy_bakery_ambience.mp3"),
+      "Tesco":          new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/tesco_ambience.mp3"),
+      "ATM":            new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/atm_ambience.mp3"),
+      "Talleyrand":     new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_ambient.mp3"),
+      "Bluebell":       new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/bluebell_ambience.mp3"),
+      "Levenshulme Antiques Market": new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/antiques_market_ambience.mp3"),
+      "Home":           new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/home_ambience.mp3")
+    };
+
+    Object.values(ambienceAudio).forEach(a => { a.loop = true; });
+
+    let currentAmbience = null;
+
+    // Talleyrand beer-taps song (grog)
     const talleyrandGrogsongAudio = new Audio(
       "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_grogsong.mp3"
     );
     talleyrandGrogsongAudio.loop = true;
 
-    // New Talleyrand painting music
+    // Talleyrand painting music
     const talleyrandPaintingAudio = new Audio(
       "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_peasant_dance_music_full_length.mp3"
     );
     talleyrandPaintingAudio.loop = true;
 
-    // Karaoke audio (for current song, if any)
+    // Karaoke audio mapping (non–Under Pressure songs)
+    const karaokeAudioSources = {
+      "THE SMITHS - GIRLFRIEND IN A COMA":
+        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_girlfriend_in_a_coma.mp3",
+      "ROBBIE WILLIAMS - ROCK DJ":
+        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_rock_dj.mp3",
+      "BILLY JOEL - WE DIDN'T START THE FIRE":
+        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_we_didnt_start_the_fire.mp3",
+      "RONAN KEATING - ROLLERCOASTER":
+        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_rollercoaster.mp3",
+      "DAVID BOWIE - BLACKSTAR":
+        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_blackstar.mp3"
+    };
+
+    // Under Pressure remains separate
+    const underPressureSrc =
+      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3";
+
+    // Karaoke audio (current track)
     let currentKaraokeAudio = null;
 
     let isMuted = false;
 
     function applyMuteState() {
       themeAudio.muted = isMuted;
+
+      Object.values(ambienceAudio).forEach(a => {
+        a.muted = isMuted;
+      });
+
       talleyrandGrogsongAudio.muted = isMuted;
       talleyrandPaintingAudio.muted = isMuted;
-      if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
+
+      if (currentKaraokeAudio) {
+        currentKaraokeAudio.muted = isMuted;
+      }
     }
 
     function stopAllAudio() {
       themeAudio.pause();
       themeAudio.currentTime = 0;
+
+      Object.values(ambienceAudio).forEach(a => {
+        a.pause();
+        a.currentTime = 0;
+      });
+      currentAmbience = null;
 
       talleyrandGrogsongAudio.pause();
       talleyrandGrogsongAudio.currentTime = 0;
@@ -649,12 +700,30 @@
       if (currentKaraokeAudio) {
         currentKaraokeAudio.pause();
         currentKaraokeAudio.currentTime = 0;
+        currentKaraokeAudio = null;
       }
     }
 
-    function playTalleyrandGrogsong() {
-      talleyrandGrogsongAudio.currentTime = 0;
+    function playAmbienceForLocation(locationName) {
+      const audio = ambienceAudio[locationName];
+      if (!audio) {
+        if (currentAmbience) {
+          currentAmbience.pause();
+          currentAmbience = null;
+        }
+        return;
+      }
+      if (currentAmbience && currentAmbience !== audio) {
+        currentAmbience.pause();
+      }
+      currentAmbience = audio;
       applyMuteState();
+      audio.play().catch(() => {});
+    }
+
+    function playTalleyrandGrogsong() {
+      applyMuteState();
+      talleyrandGrogsongAudio.currentTime = 0;
       talleyrandGrogsongAudio.play().catch(() => {});
     }
 
@@ -664,8 +733,8 @@
     }
 
     function playTalleyrandPaintingMusic() {
-      talleyrandPaintingAudio.currentTime = 0;
       applyMuteState();
+      talleyrandPaintingAudio.currentTime = 0;
       talleyrandPaintingAudio.play().catch(() => {});
     }
 
@@ -1306,16 +1375,19 @@
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
         render();
+        playAmbienceForLocation(gameState.location);
       } else if (roll >= 0.05 && roll < 0.065 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
         render();
+        playAmbienceForLocation(gameState.location);
       } else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
       } else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
         render();
+        playAmbienceForLocation(gameState.location);
         simulateMatch();
         return;
       }
@@ -1326,6 +1398,7 @@
       gameState.location = "Home";
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
+      playAmbienceForLocation(gameState.location);
     }
 
     // --- KARAOKE ---
@@ -1334,6 +1407,21 @@
       if (gameState.location !== "The Union") return;
       gameState.karaokeChoosingSong = true;
       addLog("Rockin Ronnie slides the battered karaoke song binder towards you.");
+      render();
+    }
+
+    function finishKaraoke(screen) {
+      if (!screen) return;
+      screen.style.display = "none";
+      const crowdLikesIt = Math.random() < 0.5;
+      if (crowdLikesIt) {
+        addLog("The crowd whoops and cheers. For tonight, you're a star.");
+      } else {
+        addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
+      }
+      currentKaraokeAudio = null;
+      // Resume location ambience after karaoke finishes
+      playAmbienceForLocation(gameState.location);
       render();
     }
 
@@ -1354,57 +1442,43 @@
       render();
 
       const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
+      const key = songTitle.toUpperCase();
+      const mappedSrc = karaokeAudioSources[key];
 
-      if (isUnderPressure) {
-        // Stop other global tracks (theme, Talleyrand music, any previous karaoke)
+      // For all karaoke with real audio (mapped or Under Pressure),
+      // we stop other audio and resume ambience after.
+      if (isUnderPressure || mappedSrc) {
         stopAllAudio();
 
-        const audio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3");
+        const src = isUnderPressure ? underPressureSrc : mappedSrc;
+        const audio = new Audio(src);
         currentKaraokeAudio = audio;
         applyMuteState();
 
-        const finishSong = () => {
-          if (!screen) return;
-          screen.style.display = "none";
-          const crowdLikesIt = Math.random() < 0.5;
-          if (crowdLikesIt) {
-            addLog("The crowd whoops and cheers. For tonight, you're a star.");
-          } else {
-            addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
-          }
-          currentKaraokeAudio = null;
-          render();
-        };
+        const handlerFinish = () => finishKaraoke(screen);
 
-        audio.addEventListener("ended", finishSong);
+        audio.addEventListener("ended", handlerFinish);
         audio.addEventListener("error", () => {
-          setTimeout(finishSong, 5000);
+          setTimeout(handlerFinish, 5000);
         });
 
         audio.play().catch(() => {
-          setTimeout(finishSong, 5000);
+          setTimeout(handlerFinish, 5000);
         });
       } else {
+        // No dedicated audio for this song: keep the old 5s visual-only behaviour
         setTimeout(() => {
-          screen.style.display = "none";
-          const crowdLikesIt = Math.random() < 0.5;
-          if (crowdLikesIt) {
-            addLog("The crowd whoops and cheers. For tonight, you're a star.");
-          } else {
-            addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
-          }
-          render();
+          finishKaraoke(screen);
         }, 5000);
       }
     }
 
-    // --- TALLEyrand BEER SELECTION ---
+    // --- Talleyrand BEER SELECTION ---
 
     function startTalleyrandBeerSelection() {
       if (gameState.location !== "Talleyrand") return;
       gameState.talleyrandChoosingBeer = true;
       addLog("The bartender gestures to the pumps. What are you having?");
-      // Play the beer taps song while the pumps are displayed
       playTalleyrandGrogsong();
       render();
     }
@@ -1413,7 +1487,6 @@
       gameState.talleyrandChoosingBeer = false;
       addLog(`You order ${beerName}. It appears in front of you with impossible efficiency.`);
       changeDrunk(2);
-      // Once you've chosen, stop the pumps song
       stopTalleyrandGrogsong();
       render();
     }
@@ -1450,6 +1523,7 @@
         gameState.diedByLeavingLevy = true;
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
+        playAmbienceForLocation(gameState.location);
         render();
       }, 7000);
     }
@@ -1752,6 +1826,7 @@
             () => {
               addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
               gameState.location = "Stockport Road";
+              playAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1763,6 +1838,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
+              playAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1774,6 +1850,7 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
+              playAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1799,6 +1876,7 @@
         // END NIGHT
         case "end_night":
           endNight();
+          playAmbienceForLocation(gameState.location);
           render();
           return;
 
@@ -2051,7 +2129,7 @@
       if (!action) return;
 
       if (action.type === "move") {
-        // If leaving Talleyrand while beer taps music is going, stop it
+        // If leaving Talleyrand while pumps song is playing, stop it
         if (currentLocationName === "Talleyrand" && gameState.talleyrandChoosingBeer) {
           stopTalleyrandGrogsong();
           gameState.talleyrandChoosingBeer = false;
@@ -2082,6 +2160,7 @@
 
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
+        playAmbienceForLocation(gameState.location);
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
           maybeRandomEvent();
         }
@@ -2126,14 +2205,19 @@
       gameContainer.style.display = "flex";
 
       applyMuteState();
-      stopAllAudio(); // reset any lingering audio just in case
+      stopAllAudio(); // reset anything stale
 
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
-      // Theme music after user gesture -> should be allowed
+      // When theme ends, start ambient for current location
+      themeAudio.addEventListener("ended", () => {
+        playAmbienceForLocation(gameState.location);
+      }, { once: true });
+
       themeAudio.play().catch(() => {
-        console.warn("Theme autoplay blocked even after Start click.");
+        // If browser blocks theme, just fall back to ambience
+        playAmbienceForLocation(gameState.location);
       });
     });
   </script>
