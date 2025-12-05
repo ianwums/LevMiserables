@@ -55,8 +55,10 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
+    /* Title screen */
     #titleScreen {
       position: fixed;
       inset: 0;
@@ -92,9 +94,11 @@
       background: #fff176;
     }
 
+    /* Game container wrapper (hidden until Start) */
     #gameContainer {
       display: none;
       width: 100%;
+      display: flex;
       justify-content: center;
       align-items: flex-start;
     }
@@ -107,6 +111,7 @@
       max-width: 1100px;
       width: 95%;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      transition: background 0.2s ease, border-color 0.2s ease;
       margin: 20px auto;
     }
 
@@ -182,6 +187,7 @@
       color: #111;
     }
 
+    /* Environment image (used for Talleyrand etc.) */
     .env-image-container {
       width: 320px;
       height: 200px;
@@ -190,7 +196,8 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background: #000;
-      display: none;
+      display: none; /* shown only when we have an image for the current location */
+      position: relative;
     }
 
     .env-image-container img {
@@ -207,6 +214,7 @@
       margin-bottom: 10px;
     }
 
+    /* Guinness pints in The Union */
     .pints-container {
       display: flex;
       gap: 6px;
@@ -222,31 +230,38 @@
       transition: opacity 0.4s ease;
     }
 
-    .karaoke-screen,
-    .football-screen {
+    .karaoke-screen {
       display: none;
       width: 100%;
       max-width: 260px;
       aspect-ratio: 1 / 1;
+      background: #ffeb3b;
+      color: #0d47a1;
       border-radius: 8px;
       border: 2px solid var(--border);
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 10px;
-      font-weight: 700;
-    }
-
-    .karaoke-screen {
-      background: #ffeb3b;
-      color: #0d47a1;
       font-size: 1.4rem;
+      font-weight: 700;
+      padding: 10px;
     }
 
     .football-screen {
+      display: none;
+      width: 100%;
+      max-width: 260px;
+      aspect-ratio: 1 / 1;
       background: #1b5e20;
       color: #ffffff;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px;
       position: relative;
     }
 
@@ -313,7 +328,23 @@
       box-shadow: none;
     }
 
-    .karaoke-choices,
+    .karaoke-choices {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background: rgba(255,255,255,0.6);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .karaoke-choices-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
     .talleyrand-beer-choices {
       margin-bottom: 10px;
       padding: 10px;
@@ -326,7 +357,6 @@
       font-size: 0.85rem;
     }
 
-    .karaoke-choices-title,
     .talleyrand-beer-choices-title {
       font-weight: 600;
       margin-bottom: 4px;
@@ -402,6 +432,7 @@
       margin-bottom: 2px;
     }
 
+    /* Full-screen overlays */
     .censored-overlay,
     .death-overlay,
     .painting-overlay {
@@ -425,6 +456,7 @@
       text-align: center;
     }
 
+    /* Painting overlay contents */
     .painting-content {
       max-width: 90vw;
       max-height: 90vh;
@@ -471,8 +503,12 @@
     }
 
     @media (max-width: 800px) {
-      .layout { flex-direction: column; }
-      .log { max-height: 200px; }
+      .layout {
+        flex-direction: column;
+      }
+      .log {
+        max-height: 200px;
+      }
       .overlay-text {
         font-size: 2rem;
         letter-spacing: 0.1em;
@@ -488,6 +524,7 @@
       }
     }
 
+    /* Big red Taccy Vom button */
     .taccy-button {
       background: #b71c1c;
       border-color: #ef5350;
@@ -510,14 +547,53 @@
       transform: translateY(0);
       box-shadow: none;
     }
+
+    /* Talleyrand point-and-click hotspots */
+    .talleyrand-hotspot {
+      position: absolute;
+      cursor: pointer;
+      background: rgba(255, 0, 0, 0); /* invisible but clickable */
+    }
+
+    /* Rough layout for 320x200 image – tweak as needed */
+    #tallyPaintingHotspot {
+      top: 20px;
+      left: 20px;
+      width: 120px;
+      height: 80px;
+    }
+
+    #tallyBarHotspot {
+      bottom: 20px;
+      left: 60px;
+      width: 200px;
+      height: 70px;
+    }
+
+    #tallySnacksHotspot {
+      bottom: 20px;
+      right: 20px;
+      width: 80px;
+      height: 60px;
+    }
+
+    #tallyDoorHotspot {
+      top: 40px;
+      right: 10px;
+      width: 60px;
+      height: 120px;
+    }
   </style>
 </head>
 <body>
+
+  <!-- TITLE SCREEN -->
   <div id="titleScreen">
     <h1>LEV MISERABLES<br/>- A Drinking Game</h1>
     <button id="startButton">Begin</button>
   </div>
 
+  <!-- MAIN GAME WRAPPER (HIDDEN UNTIL START) -->
   <div id="gameContainer">
     <div class="game-container">
       <div class="header-row">
@@ -541,10 +617,17 @@
         <div class="main-panel">
           <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
 
+          <!-- ASCII map / description art -->
           <pre id="asciiArt" class="ascii-art"></pre>
 
+          <!-- Environment pixel image (e.g. Talleyrand bar) -->
           <div id="envImageContainer" class="env-image-container">
             <img id="envImage" src="" alt="">
+            <!-- Talleyrand point-and-click hotspots -->
+            <div id="tallyPaintingHotspot" class="talleyrand-hotspot" title="Look at painting"></div>
+            <div id="tallyBarHotspot" class="talleyrand-hotspot" title="Buy a beer"></div>
+            <div id="tallySnacksHotspot" class="talleyrand-hotspot" title="Buy pretzels"></div>
+            <div id="tallyDoorHotspot" class="talleyrand-hotspot" title="Leave to Stockport Road"></div>
           </div>
 
           <div class="screens-row">
@@ -552,12 +635,17 @@
             <div id="footballScreen" class="football-screen"></div>
           </div>
 
+          <!-- Guinness pints in The Union -->
           <div id="pintsContainer" class="pints-container"></div>
 
           <div id="description" class="description"></div>
 
+          <!-- Karaoke choices ABOVE normal choices -->
           <div id="karaokeChoices" class="karaoke-choices"></div>
+
+          <!-- Talleyrand beer choices -->
           <div id="talleyrandBeerChoices" class="talleyrand-beer-choices"></div>
+
           <div id="choices" class="choices"></div>
         </div>
 
@@ -566,6 +654,7 @@
           <div class="log-title">Action Log</div>
           <div id="log" class="log"></div>
           <div class="hint">Press 1–9 to choose an option.</div>
+
           <div class="summary">
             <div class="summary-title">Session Summary</div>
             <ul class="summary-list" id="sessionSummary"></ul>
@@ -575,16 +664,19 @@
     </div>
   </div>
 
+  <!-- Taccy Vom / Sam Smiths overlay -->
   <div id="censoredOverlay" class="censored-overlay">
     <div id="censoredText" class="overlay-text">CENSORED</div>
   </div>
 
+  <!-- Death overlay -->
   <div id="deathOverlay" class="death-overlay">
     <div class="overlay-text">
       YOU DIED - THE PENALTY FOR LEAVING LEVENSHULME IS TO BE HUNG BY THE NECK UNTIL YOU ARE DEAD
     </div>
   </div>
 
+  <!-- Painting overlay -->
   <div id="paintingOverlay" class="painting-overlay">
     <div class="painting-content">
       <img
@@ -605,145 +697,205 @@
   <script>
     const AUDIO_BASE = "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/";
 
+    // THEME AUDIO FOR TITLE SCREEN
     const themeAudio = new Audio(AUDIO_BASE + "lev_mis_theme.mp3");
     themeAudio.loop = false;
     themeAudio.volume = 1.0;
 
-    const ambienceAudio = {
-      "Stockport Road": new Audio(AUDIO_BASE + "stockport_road_ambience.mp3"),
-      "The Union":      new Audio(AUDIO_BASE + "union_ambience.mp3"),
-      "Nispy":          new Audio(AUDIO_BASE + "nispy_kitchen.mp3"),
-      "Isca":           new Audio(AUDIO_BASE + "isca_bar.mp3"),
-      "Levy Bakery":    new Audio(AUDIO_BASE + "levy_bakery_grill.mp3"),
-      "Tesco":          new Audio(AUDIO_BASE + "tesco_nightshop.mp3"),
-      "ATM":            new Audio(AUDIO_BASE + "atm_street_corner.mp3"),
-      "Talleyrand":     new Audio(AUDIO_BASE + "talleyrand_bar.mp3"),
-      "Bluebell":       new Audio(AUDIO_BASE + "bluebell_pub.mp3"),
-      "Levenshulme Antiques Market": new Audio(AUDIO_BASE + "antiques_market_floor.mp3"),
-      "Home":           new Audio(AUDIO_BASE + "home_quiet_night.mp3")
-    };
-
-    Object.values(ambienceAudio).forEach(a => { a.loop = true; });
-
-    let currentAmbience = null;
-
-    const talleyrandGrogsongAudio = new Audio(
-      AUDIO_BASE + "talleyrand_grogsong.mp3"
-    );
-    talleyrandGrogsongAudio.loop = true;
-
-    const talleyrandPaintingAudio = new Audio(
-      AUDIO_BASE + "talleyrand_peasant_dance_music_full_length.mp3"
-    );
-    talleyrandPaintingAudio.loop = true;
-
-    // NEW: union football crowd audio
-    const unionFootballCrowdAudio = new Audio(
-      AUDIO_BASE + "union_football_crowd.mp3"
-    );
-    unionFootballCrowdAudio.loop = true;
-
-    const karaokeAudioSources = {
-      "THE SMITHS - GIRLFRIEND IN A COMA":
-        AUDIO_BASE + "karaoke_girlfriend_in_a_coma.mp3",
-      "ROBBIE WILLIAMS - ROCK DJ":
-        AUDIO_BASE + "karaoke_rock_dj.mp3",
-      "BRUCE SPRINGSTEEN - BORN TO RUN":
-        AUDIO_BASE + "karaoke_born_to_run.mp3",
-      "NANCY SINATRA - BOOTS":
-        AUDIO_BASE + "karaoke_boots.mp3",
-      "BILLY JOEL - WE DIDN'T START THE FIRE":
-        AUDIO_BASE + "karaoke_we_didnt_start_the_fire.mp3",
-      "RONAN KEATING - ROLLERCOASTER":
-        AUDIO_BASE + "karaoke_rollercoaster.mp3",
-      "DAVID BOWIE - BLACKSTAR":
-        AUDIO_BASE + "karaoke_blackstar.mp3"
-    };
-
-    const underPressureSrc = AUDIO_BASE + "karaoke_under_pressure.mp3";
-
-    let currentKaraokeAudio = null;
+    // Global mute state
     let isMuted = false;
 
-    function applyMuteState() {
-      themeAudio.muted = isMuted;
-      Object.values(ambienceAudio).forEach(a => { a.muted = isMuted; });
-      talleyrandGrogsongAudio.muted = isMuted;
-      talleyrandPaintingAudio.muted = isMuted;
-      unionFootballCrowdAudio.muted = isMuted; // NEW
-      if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
-    }
+    // Main audio handles
+    let ambientAudio = null;
+    let currentKaraokeAudio = null;
+    let unionFootballCrowdAudio = null;
+    let talleyrandGrogAudio = null;
+    let paintingMusicAudio = null;
 
-    function stopAllAudio() {
-      themeAudio.pause();
-      themeAudio.currentTime = 0;
-
-      Object.values(ambienceAudio).forEach(a => {
-        a.pause();
-        a.currentTime = 0;
-      });
-      currentAmbience = null;
-
-      talleyrandGrogsongAudio.pause();
-      talleyrandGrogsongAudio.currentTime = 0;
-
-      talleyrandPaintingAudio.pause();
-      talleyrandPaintingAudio.currentTime = 0;
-
-      unionFootballCrowdAudio.pause();        // NEW
-      unionFootballCrowdAudio.currentTime = 0;// NEW
-
-      if (currentKaraokeAudio) {
-        currentKaraokeAudio.pause();
-        currentKaraokeAudio.currentTime = 0;
-        currentKaraokeAudio = null;
-      }
-    }
-
-    function playAmbienceForLocation(locationName) {
-      const audio = ambienceAudio[locationName];
-      if (!audio) {
-        if (currentAmbience) {
-          currentAmbience.pause();
-          currentAmbience = null;
-        }
-        return;
-      }
-      if (currentAmbience && currentAmbience !== audio) {
-        currentAmbience.pause();
-      }
-      currentAmbience = audio;
-      applyMuteState();
-      audio.play().catch(() => {});
-    }
-
-    function playTalleyrandGrogsong() {
-      applyMuteState();
-      talleyrandGrogsongAudio.currentTime = 0;
-      talleyrandGrogsongAudio.play().catch(() => {});
-    }
-
-    function stopTalleyrandGrogsong() {
-      talleyrandGrogsongAudio.pause();
-      talleyrandGrogsongAudio.currentTime = 0;
-    }
-
-    function playTalleyrandPaintingMusic() {
-      applyMuteState();
-      talleyrandPaintingAudio.currentTime = 0;
-      talleyrandPaintingAudio.play().catch(() => {});
-    }
-
-    function stopTalleyrandPaintingMusic() {
-      talleyrandPaintingAudio.pause();
-      talleyrandPaintingAudio.currentTime = 0;
-    }
+    let lastAmbientLocation = null;
 
     const titleScreen = document.getElementById("titleScreen");
     const startButton = document.getElementById("startButton");
     const gameContainer = document.getElementById("gameContainer");
     const muteButton = document.getElementById("muteButton");
 
+    // Ambient tracks per location
+    const ambientTracks = {
+      "Stockport Road": "stockport_road_ambience.mp3",
+      "The Union": "union_ambience.mp3",
+      "Nispy": "nispy_kitchen.mp3",
+      "Isca": "isca_bar.mp3",
+      "Levy Bakery": "levy_bakery_grill.mp3",
+      "Tesco": "tesco_nightshop.mp3",
+      "ATM": "atm_street_corner.mp3",
+      "Talleyrand": "talleyrand_bar.mp3",
+      "Bluebell": "bluebell_pub.mp3",
+      "Levenshulme Antiques Market": "antiques_market_floor.mp3",
+      "Home": "home_quiet_night.mp3"
+    };
+
+    // Karaoke audio mapping
+    const karaokeAudioMap = {
+      "GIRLFRIEND IN A COMA": "karaoke_girlfriend_in_a_coma.mp3",
+      "ROCK DJ": "karaoke_rock_dj.mp3",
+      "BORN TO RUN": "karaoke_born_to_run.mp3",
+      "BOOTS": "karaoke_boots.mp3",
+      "WE DIDN'T START THE FIRE": "karaoke_we_didnt_start_the_fire.mp3",
+      "ROLLERCOASTER": "karaoke_rollercoaster.mp3",
+      "BLACKSTAR": "karaoke_blackstar.mp3",
+      "UNDER PRESSURE": "karaoke_under_pressure.mp3"
+      // GREEN LIGHT & bed exist but not currently used
+    };
+
+    // Apply mute/unmute to all audio we manage
+    function applyMuteState() {
+      const audios = [
+        themeAudio,
+        ambientAudio,
+        currentKaraokeAudio,
+        unionFootballCrowdAudio,
+        talleyrandGrogAudio,
+        paintingMusicAudio
+      ];
+      audios.forEach(a => {
+        if (a) a.muted = isMuted;
+      });
+    }
+
+    function stopAudio(audioObj) {
+      if (!audioObj) return;
+      audioObj.pause();
+      audioObj.currentTime = 0;
+    }
+
+    function stopAllAudio() {
+      stopAudio(themeAudio);
+      stopAudio(ambientAudio);
+      stopAudio(currentKaraokeAudio);
+      stopAudio(unionFootballCrowdAudio);
+      stopAudio(talleyrandGrogAudio);
+      stopAudio(paintingMusicAudio);
+    }
+
+    function playAmbientForLocation(locationName) {
+      const file = ambientTracks[locationName];
+      if (!file) return;
+
+      if (lastAmbientLocation === locationName && ambientAudio && !ambientAudio.paused) {
+        return; // already playing correct track
+      }
+
+      if (ambientAudio) {
+        stopAudio(ambientAudio);
+      }
+
+      ambientAudio = new Audio(AUDIO_BASE + file);
+      ambientAudio.loop = true;
+      ambientAudio.volume = 0.7;
+      ambientAudio.muted = isMuted;
+      ambientAudio.play().catch(() => {});
+      lastAmbientLocation = locationName;
+    }
+
+    function startFootballCrowd() {
+      if (unionFootballCrowdAudio) {
+        stopAudio(unionFootballCrowdAudio);
+      }
+      unionFootballCrowdAudio = new Audio(AUDIO_BASE + "union_football_crowd.mp3");
+      unionFootballCrowdAudio.loop = true;
+      unionFootballCrowdAudio.volume = 0.9;
+      unionFootballCrowdAudio.muted = isMuted;
+      unionFootballCrowdAudio.play().catch(() => {});
+    }
+
+    function fadeOutFootballCrowdAndResumeUnionAmbient() {
+      if (!unionFootballCrowdAudio) {
+        if (gameState.location === "The Union") {
+          playAmbientForLocation("The Union");
+        }
+        return;
+      }
+      const step = 0.1;
+      const interval = setInterval(() => {
+        if (!unionFootballCrowdAudio) {
+          clearInterval(interval);
+          return;
+        }
+        unionFootballCrowdAudio.volume = Math.max(0, unionFootballCrowdAudio.volume - step);
+        if (unionFootballCrowdAudio.volume <= 0.01) {
+          clearInterval(interval);
+          stopAudio(unionFootballCrowdAudio);
+          unionFootballCrowdAudio = null;
+          if (gameState.location === "The Union") {
+            playAmbientForLocation("The Union");
+          }
+        }
+      }, 200);
+    }
+
+    function playKaraokeTrackForSong(songTitle) {
+      // Stop existing karaoke
+      if (currentKaraokeAudio) {
+        stopAudio(currentKaraokeAudio);
+        currentKaraokeAudio = null;
+      }
+      const upper = songTitle.toUpperCase();
+      let key = null;
+      for (const k in karaokeAudioMap) {
+        if (upper.includes(k)) {
+          key = k;
+          break;
+        }
+      }
+      if (!key) return; // no audio mapped for this song
+
+      const file = karaokeAudioMap[key];
+      const audio = new Audio(AUDIO_BASE + file);
+      currentKaraokeAudio = audio;
+      audio.muted = isMuted;
+      audio.volume = 1.0;
+
+      audio.addEventListener("ended", () => {
+        currentKaraokeAudio = null;
+      });
+      audio.play().catch(() => {});
+    }
+
+    function startTalleyrandGrogSong() {
+      if (talleyrandGrogAudio) {
+        stopAudio(talleyrandGrogAudio);
+      }
+      talleyrandGrogAudio = new Audio(AUDIO_BASE + "talleyrand_grogsong.mp3");
+      talleyrandGrogAudio.loop = true;
+      talleyrandGrogAudio.volume = 0.9;
+      talleyrandGrogAudio.muted = isMuted;
+      talleyrandGrogAudio.play().catch(() => {});
+    }
+
+    function stopTalleyrandGrogSong() {
+      if (!talleyrandGrogAudio) return;
+      stopAudio(talleyrandGrogAudio);
+      talleyrandGrogAudio = null;
+    }
+
+    function startPaintingMusic() {
+      if (paintingMusicAudio) {
+        stopAudio(paintingMusicAudio);
+      }
+      paintingMusicAudio = new Audio(AUDIO_BASE + "talleyrand_peasant_dance_music_full_length.mp3");
+      paintingMusicAudio.loop = true;
+      paintingMusicAudio.volume = 0.9;
+      paintingMusicAudio.muted = isMuted;
+      paintingMusicAudio.play().catch(() => {});
+    }
+
+    function stopPaintingMusic() {
+      if (!paintingMusicAudio) return;
+      stopAudio(paintingMusicAudio);
+      paintingMusicAudio = null;
+    }
+
+    // Wire up the mute button
     if (muteButton) {
       muteButton.addEventListener("click", () => {
         isMuted = !isMuted;
@@ -752,6 +904,7 @@
       });
     }
 
+    // --- GAME STATE ---
     const gameState = {
       location: "Stockport Road",
       hasCash: false,
@@ -774,7 +927,7 @@
       antiquesChosen: [],
       antiquesRoundComplete: false,
       diedByLeavingLevy: false,
-      unionPints: [],
+      unionPints: [],              // Guinness pints in The Union
       talleyrandChoosingBeer: false
     };
 
@@ -789,6 +942,7 @@
       "QUEEN (FEAT DAVID BOWIE) - UNDER PRESSURE"
     ];
 
+    // Talleyrand beer options
     const talleyrandBeers = [
       "A pint of Best Bitter",
       "A hazy New England IPA",
@@ -863,9 +1017,14 @@
       );
     }
 
+    // --- DRUNK HELPERS ---
     function checkDrunkState() {
-      if (gameState.drunk >= 5) addLog("You are feeling tipsy, it might be time to eat something");
-      if (gameState.drunk >= 10 && gameState.location !== "Home") blackoutToBed();
+      if (gameState.drunk >= 5) {
+        addLog("You are feeling tipsy, it might be time to eat something");
+      }
+      if (gameState.drunk >= 10 && gameState.location !== "Home") {
+        blackoutToBed();
+      }
     }
 
     function setDrunk(newValue) {
@@ -874,10 +1033,13 @@
     }
 
     function changeDrunk(delta) {
-      if (delta > 0) gameState.drinksCount += 1;
+      if (delta > 0) {
+        gameState.drinksCount += 1;
+      }
       setDrunk(gameState.drunk + delta);
     }
 
+    // Satiation cap check: any food except Quorn nuggies
     function canEatMore() {
       if (gameState.satiation >= 10) {
         addLog("There is absolutely no way you are still hungry!");
@@ -886,6 +1048,7 @@
       return true;
     }
 
+    // Queue log lines with a delay; optional per-line callback
     function queueLogEvents(lines, delayMs, onComplete, onEach) {
       let i = 0;
       function next() {
@@ -903,6 +1066,7 @@
       next();
     }
 
+    // --- WORLD / LOCATIONS ---
     const locations = {
       "Stockport Road": {
         ascii: String.raw`
@@ -1154,7 +1318,7 @@
       },
 
       "Home": {
-        ascii: "",
+        ascii: "", // decided in render()
         description: "You finally make it home. A large cat eyes you hungrily. The night in Levenshulme fades into a fuzzy memory.",
         actions: [
           { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
@@ -1201,16 +1365,19 @@
    the night goes on without you.
     `;
 
-    // MATCH SIMULATION (now with football crowd audio)
+    // --- MATCH SIMULATION WITH TV ---
     function simulateMatch() {
-      // Start the football crowd noise
-      applyMuteState();
-      unionFootballCrowdAudio.currentTime = 0;
-      unionFootballCrowdAudio.play().catch(() => {});
-
       const derbies = [
-        { home: "Manchester United", away: "Everton", name: "The Sherbets Derby" },
-        { home: "Manchester United", away: "Aston Villa", name: "The Scrumpuss Derby" }
+        {
+          home: "Manchester United",
+          away: "Everton",
+          name: "The Sherbets Derby"
+        },
+        {
+          home: "Manchester United",
+          away: "Aston Villa",
+          name: "The Scrumpuss Derby"
+        }
       ];
 
       const derby = derbies[randInt(0, derbies.length - 1)];
@@ -1253,29 +1420,31 @@
         lines.push(`Second half: GOAL for ${teamName}! ${scorer} finds the net.`);
       });
 
-      if (homeTotal === awayTotal && Math.random() < 0.6) {
-        wentToET = true;
-        const etHome = randInt(0, 2);
-        const etAway = randInt(0, 2);
-        const beforeETHome = homeTotal;
-        const beforeETAway = awayTotal;
+      if (homeTotal === awayTotal) {
+        if (Math.random() < 0.6) {
+          wentToET = true;
+          const etHome = randInt(0, 2);
+          const etAway = randInt(0, 2);
+          const beforeETHome = homeTotal;
+          const beforeETAway = awayTotal;
 
-        for (let i = 0; i < etHome; i++) etGoals.push({ team: "home" });
-        for (let i = 0; i < etAway; i++) etGoals.push({ team: "away" });
-        etGoals.sort(() => Math.random() - 0.5);
+          for (let i = 0; i < etHome; i++) etGoals.push({ team: "home" });
+          for (let i = 0; i < etAway; i++) etGoals.push({ team: "away" });
+          etGoals.sort(() => Math.random() - 0.5);
 
-        homeTotal += etHome;
-        awayTotal += etAway;
+          homeTotal += etHome;
+          awayTotal += etAway;
 
-        lines.push(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
+          lines.push(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
 
-        etGoals.forEach((g) => {
-          const teamName = g.team === "home" ? derby.home : derby.away;
-          const scorer = randomScorer(teamName);
-          lines.push(`Extra time: GOAL for ${teamName}! ${scorer} might have won it.`);
-        });
+          etGoals.forEach((g) => {
+            const teamName = g.team === "home" ? derby.home : derby.away;
+            const scorer = randomScorer(teamName);
+            lines.push(`Extra time: GOAL for ${teamName}! ${scorer} might have won it.`);
+          });
 
-        lines.push(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+          lines.push(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
+        }
       }
 
       let homePens = 0;
@@ -1329,17 +1498,18 @@
       const footballScreen = document.getElementById("footballScreen");
       footballScreen.style.display = "flex";
 
+      // start football crowd noise
+      startFootballCrowd();
+
       queueLogEvents(
         lines,
         2000,
         () => {
-          // Stop the football crowd when the match sequence is done
-          unionFootballCrowdAudio.pause();
-          unionFootballCrowdAudio.currentTime = 0;
-
           setTimeout(() => {
             footballScreen.style.display = "none";
             footballScreen.innerHTML = "";
+            // fade out crowd and resume ambience
+            fadeOutFootballCrowdAndResumeUnionAmbient();
           }, 4000);
           render();
         },
@@ -1352,8 +1522,10 @@
       );
     }
 
+    // When Devil/wife buys you a Guinness after a match
     function awardUnionGuinnessFromDevil() {
       changeDrunk(2);
+
       if (gameState.location === "The Union") {
         gameState.unionPints.push({ state: "full" });
         const thisIndex = gameState.unionPints.length - 1;
@@ -1367,8 +1539,10 @@
       }
     }
 
+    // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
-      if (gameState.location === "Home" || gameState.location === "Levenshulme Antiques Market") return;
+      if (gameState.location === "Home") return;
+      if (gameState.location === "Levenshulme Antiques Market") return;
 
       const roll = Math.random();
       const current = gameState.location;
@@ -1377,50 +1551,36 @@
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
         render();
-        playAmbienceForLocation(gameState.location);
-      } else if (roll >= 0.05 && roll < 0.065 && current !== "Levy Bakery") {
+      }
+      else if (roll >= 0.05 && roll < 0.065 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
         render();
-        playAmbienceForLocation(gameState.location);
-      } else if (roll < 0.15) {
+      }
+      else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
       } else if (roll < 0.20 && current !== "The Union") {
         gameState.location = "The Union";
         render();
-        playAmbienceForLocation(gameState.location);
         simulateMatch();
         return;
       }
     }
 
+    // --- BLACKOUT LOGIC ---
     function blackoutToBed() {
       gameState.drunk = 10;
       gameState.location = "Home";
       addLog("You reach peak drunkenness and the night dissolves. You black out and wake up in bed.");
       addLog("You have only fragments of the evening, but at least you made it home.");
-      playAmbienceForLocation(gameState.location);
     }
 
+    // --- KARAOKE FLOW ---
     function startKaraokeSongSelection() {
       if (gameState.location !== "The Union") return;
       gameState.karaokeChoosingSong = true;
       addLog("Rockin Ronnie slides the battered karaoke song binder towards you.");
-      render();
-    }
-
-    function finishKaraoke(screen) {
-      if (!screen) return;
-      screen.style.display = "none";
-      const crowdLikesIt = Math.random() < 0.5;
-      if (crowdLikesIt) {
-        addLog("The crowd whoops and cheers. For tonight, you're a star.");
-      } else {
-        addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
-      }
-      currentKaraokeAudio = null;
-      playAmbienceForLocation(gameState.location);
       render();
     }
 
@@ -1440,39 +1600,49 @@
 
       render();
 
-      const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
-      const mappedSrc = karaokeAudioSources[songTitle];
+      // Play karaoke track (if exists)
+      playKaraokeTrackForSong(songTitle);
 
-      if (isUnderPressure || mappedSrc) {
-        stopAllAudio();
+      const finishSong = () => {
+        if (!screen) return;
+        screen.style.display = "none";
+        const crowdLikesIt = Math.random() < 0.5;
+        if (crowdLikesIt) {
+          addLog("The crowd whoops and cheers. For tonight, you're a star.");
+        } else {
+          addLog("The patrons boo and jeer. Someone shouts for Rockin Ronnie to cut the mic.");
+        }
+        if (currentKaraokeAudio) {
+          stopAudio(currentKaraokeAudio);
+          currentKaraokeAudio = null;
+        }
+        render();
+      };
 
-        const src = isUnderPressure ? underPressureSrc : mappedSrc;
-        const audio = new Audio(src);
-        currentKaraokeAudio = audio;
-        applyMuteState();
+      // Fallback timer in case audio ends or fails silently
+      setTimeout(() => {
+        if (screen.style.display !== "none") {
+          finishSong();
+        }
+      }, 60000); // 60s safety
 
-        const handlerFinish = () => finishKaraoke(screen);
-
-        audio.addEventListener("ended", handlerFinish);
-        audio.addEventListener("error", () => {
-          setTimeout(handlerFinish, 5000);
-        });
-
-        audio.play().catch(() => {
-          setTimeout(handlerFinish, 5000);
-        });
+      if (currentKaraokeAudio) {
+        currentKaraokeAudio.addEventListener("ended", finishSong, { once: true });
+        currentKaraokeAudio.addEventListener("error", () => {
+          setTimeout(finishSong, 5000);
+        }, { once: true });
       } else {
-        setTimeout(() => {
-          finishKaraoke(screen);
-        }, 5000);
+        // No audio mapped; short text-only performance
+        setTimeout(finishSong, 5000);
       }
     }
 
+    // --- Talleyrand Beer Selection ---
     function startTalleyrandBeerSelection() {
       if (gameState.location !== "Talleyrand") return;
       gameState.talleyrandChoosingBeer = true;
       addLog("The bartender gestures to the pumps. What are you having?");
-      playTalleyrandGrogsong();
+      startTalleyrandGrogSong();
       render();
     }
 
@@ -1480,10 +1650,11 @@
       gameState.talleyrandChoosingBeer = false;
       addLog(`You order ${beerName}. It appears in front of you with impossible efficiency.`);
       changeDrunk(2);
-      stopTalleyrandGrogsong();
+      stopTalleyrandGrogSong();
       render();
     }
 
+    // --- GENERIC FULL-SCREEN MESSAGE OVERLAY (CENSORED / SAM SMITHS) ---
     function showOverlayMessage(text, durationMs, callback) {
       const overlay = document.getElementById("censoredOverlay");
       const label = document.getElementById("censoredText");
@@ -1496,6 +1667,7 @@
       }, durationMs);
     }
 
+    // --- TACCY VOM VOM ---
     function doTaccyVomVom() {
       showOverlayMessage("CENSORED", 3000, () => {
         addLog("That was disgusting! But at least we can eat something now.");
@@ -1504,6 +1676,7 @@
       });
     }
 
+    // --- LEAVE LEVENSHULME (YOU DIED) ---
     function leaveLevenshulme() {
       const overlay = document.getElementById("deathOverlay");
       overlay.style.display = "flex";
@@ -1514,11 +1687,11 @@
         gameState.diedByLeavingLevy = true;
         addLog("The penalty for leaving Levenshulme is to be hung by the neck until you are dead");
         endNight();
-        playAmbienceForLocation(gameState.location);
         render();
       }, 7000);
     }
 
+    // --- ANTIQUES MINI-GAME ---
     function pickAntique(index) {
       if (gameState.location !== "Levenshulme Antiques Market") return;
 
@@ -1555,29 +1728,36 @@
         gameState.hasCash = true;
       } else {
         addLog(`At auction, your ${first} and ${second} fall flat. You make a painful loss and a new enemy in the trade.`);
-        if (gameState.hasCash) gameState.hasCash = false;
+        if (gameState.hasCash) {
+          gameState.hasCash = false;
+        }
       }
 
       gameState.antiquesRoundComplete = true;
     }
 
+    // --- Painting Overlay ---
     function showPainting() {
-      document.getElementById("paintingOverlay").style.display = "flex";
-      playTalleyrandPaintingMusic();
+      const overlay = document.getElementById("paintingOverlay");
+      overlay.style.display = "flex";
+      startPaintingMusic();
     }
 
     function hidePainting() {
       document.getElementById("paintingOverlay").style.display = "none";
-      stopTalleyrandPaintingMusic();
+      stopPaintingMusic();
     }
 
+    // --- ACTION HANDLERS ---
     function performAction(actionId) {
       switch (actionId) {
+        // UNION
         case "union_guinness": {
           const decorations = ["heart", "musical note", "shamrock"];
           const decoration = pickRandom(decorations);
           addLog(`Magz hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
           changeDrunk(2);
+
           gameState.unionPints.push({ state: "full" });
           const thisIndex = gameState.unionPints.length - 1;
           render();
@@ -1587,6 +1767,7 @@
             pint.state = "empty";
             render();
           }, 3000);
+
           break;
         }
         case "union_karaoke":
@@ -1629,6 +1810,7 @@
           changeDrunk(-1);
           break;
 
+        // NISPY
         case "nispy_meal":
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
@@ -1645,6 +1827,7 @@
           addLog("The staff glare and say, 'The food is salty enough already, NO WAY!'");
           break;
 
+        // ISCA
         case "isca_fizz":
           addLog("You sip a glass of fizz and briefly consider moving to Paris.");
           changeDrunk(1);
@@ -1665,6 +1848,7 @@
           changeDrunk(-2);
           break;
 
+        // LEVY BAKERY
         case "levy_mixed":
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
@@ -1694,6 +1878,7 @@
           }
           break;
 
+        // TESCO
         case "tesco_kitchen_roll":
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
@@ -1709,6 +1894,7 @@
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
+        // ATM
         case "atm_insert_card":
           if (!gameState.hasCard && !gameState.cardInMachine) {
             addLog("You pat your pockets. No card. Perhaps the ATM already claimed it earlier.");
@@ -1747,14 +1933,17 @@
           }
           break;
 
+        // TACCY VOM VOM
         case "taccy_vom_vom":
           doTaccyVomVom();
           break;
 
+        // LEAVE LEVENSHULME
         case "leave_levenshulme":
           leaveLevenshulme();
           return;
 
+        // TALLEYRAND
         case "talleyrand_painting":
           showPainting();
           break;
@@ -1769,6 +1958,7 @@
           changeDrunk(-1);
           break;
 
+        // BLUEBELL
         case "bluebell_beer":
           addLog("You buy a beer. Mark gives a curt nod.");
           changeDrunk(2);
@@ -1801,7 +1991,6 @@
             () => {
               addLog("Mark the landlord growls, 'You can't use your phone in here, get out!'");
               gameState.location = "Stockport Road";
-              playAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1813,7 +2002,6 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
-              playAmbienceForLocation(gameState.location);
               render();
             }
           );
@@ -1825,12 +2013,12 @@
             () => {
               addLog("Mark the landlord snaps, 'You can't use that kind of language in here, get out!'");
               gameState.location = "Stockport Road";
-              playAmbienceForLocation(gameState.location);
               render();
             }
           );
           break;
 
+        // ANTIQUES
         case "antiques_1":
           pickAntique(0);
           break;
@@ -1847,12 +2035,13 @@
           pickAntique(4);
           break;
 
+        // END OF NIGHT
         case "end_night":
           endNight();
-          playAmbienceForLocation(gameState.location);
           render();
           return;
 
+        // RESTART
         case "restart_game":
           window.location.reload();
           return;
@@ -1908,6 +2097,7 @@
       }
     }
 
+    // --- RENDERING ---
     function render() {
       const loc = locations[gameState.location];
 
@@ -1929,6 +2119,10 @@
       const pintsContainer = document.getElementById("pintsContainer");
       const envImageContainer = document.getElementById("envImageContainer");
       const envImage = document.getElementById("envImage");
+      const tallyPaintingHotspot = document.getElementById("tallyPaintingHotspot");
+      const tallyBarHotspot = document.getElementById("tallyBarHotspot");
+      const tallySnacksHotspot = document.getElementById("tallySnacksHotspot");
+      const tallyDoorHotspot = document.getElementById("tallyDoorHotspot");
 
       statusLocationEl.textContent = gameState.location;
       statusCashEl.textContent = gameState.hasCash ? "Yes" : "No";
@@ -1945,6 +2139,7 @@
       statusSatiationEl.textContent = gameState.satiation + " / 10";
       statusScoreEl.textContent = getScore();
 
+      // Wife status banner
       if (gameState.wifeWantsQuorn) {
         wifeStatusEl.textContent = "WIFE ALERT: She is waiting on Quorn chicken nuggies!";
         wifeStatusEl.className = "wife-status-banner active";
@@ -1953,6 +2148,7 @@
         wifeStatusEl.className = "wife-status-banner inactive";
       }
 
+      // GAME OVER banner visibility & text
       if (gameState.location === "Home") {
         if (gameState.wifeWantsQuorn) {
           gameOverBanner.textContent = "GAME OVER YOU FORGOT THE NUGGIES. IT'S D I V O R C E TIME!";
@@ -1964,6 +2160,7 @@
         gameOverBanner.style.display = "none";
       }
 
+      // Home ASCII: house vs gravestone variant
       if (gameState.location === "Home") {
         asciiEl.textContent = gameState.diedByLeavingLevy ? homeGraveAscii : homeHouseAscii;
       } else {
@@ -1972,6 +2169,7 @@
 
       descEl.textContent = loc.description;
 
+      // Environment image logic (currently only Talleyrand)
       envImageContainer.style.display = "none";
       if (gameState.location === "Talleyrand") {
         envImageContainer.style.display = "block";
@@ -1984,6 +2182,17 @@
         }
       }
 
+      // Show/hide hotspots only in Talleyrand
+      const showTallyHotspots = gameState.location === "Talleyrand";
+      [tallyPaintingHotspot, tallyBarHotspot, tallySnacksHotspot, tallyDoorHotspot].forEach(el => {
+        if (!el) return;
+        el.style.display = showTallyHotspots ? "block" : "none";
+      });
+
+      // Ambient audio per location
+      playAmbientForLocation(gameState.location);
+
+      // Guinness pints display in The Union
       pintsContainer.innerHTML = "";
       if (gameState.location === "The Union") {
         gameState.unionPints.forEach(pint => {
@@ -1996,6 +2205,7 @@
         });
       }
 
+      // Karaoke song list
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
         karaokeChoicesEl.style.display = "flex";
@@ -2014,6 +2224,7 @@
         karaokeChoicesEl.style.display = "none";
       }
 
+      // Talleyrand beer list
       beerChoicesEl.innerHTML = "";
       if (gameState.talleyrandChoosingBeer && gameState.location === "Talleyrand") {
         beerChoicesEl.style.display = "flex";
@@ -2032,9 +2243,11 @@
         beerChoicesEl.style.display = "none";
       }
 
+      // Choices
       choicesEl.innerHTML = "";
       let actionsToShow = [...loc.actions];
 
+      // Conditionally add Taccy Vom Vom option (global special) at the TOP
       if (
         gameState.location !== "Home" &&
         gameState.satiation === 10 &&
@@ -2050,11 +2263,14 @@
       actionsToShow.forEach((action, index) => {
         const btn = document.createElement("button");
         btn.textContent = (index + 1) + ". " + action.label;
-        if (action.id === "taccy_vom_vom") btn.classList.add("taccy-button");
+        if (action.id === "taccy_vom_vom") {
+          btn.classList.add("taccy-button");
+        }
         btn.addEventListener("click", () => handleChoice(actionsToShow, index));
         choicesEl.appendChild(btn);
       });
 
+      // Full history, latest at the top; top entry bold
       logEl.innerHTML = "";
       const allEntries = [...gameState.log].reverse();
       allEntries.forEach((entry, idx) => {
@@ -2071,6 +2287,7 @@
       });
       logEl.scrollTop = 0;
 
+      // Session summary
       summaryEl.innerHTML = "";
       const items = [
         `Drinks consumed (including shots, pints, etc): ${gameState.drinksCount}`,
@@ -2094,11 +2311,6 @@
       if (!action) return;
 
       if (action.type === "move") {
-        if (currentLocationName === "Talleyrand" && gameState.talleyrandChoosingBeer) {
-          stopTalleyrandGrogsong();
-          gameState.talleyrandChoosingBeer = false;
-        }
-
         gameState.karaokeChoosingSong = false;
 
         if (currentLocationName === "ATM" && gameState.cardInMachine) {
@@ -2124,7 +2336,6 @@
 
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
-        playAmbienceForLocation(gameState.location);
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
           maybeRandomEvent();
         }
@@ -2138,6 +2349,7 @@
       gameState.log.push(text);
     }
 
+    // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
       const choiceIndex = parseInt(event.key, 10) - 1;
@@ -2160,25 +2372,77 @@
       handleChoice(actionsToShow, choiceIndex);
     });
 
+    // Talleyrand point-and-click handlers
+    function initTalleyrandHotspots() {
+      const painting = document.getElementById("tallyPaintingHotspot");
+      const bar = document.getElementById("tallyBarHotspot");
+      const snacks = document.getElementById("tallySnacksHotspot");
+      const door = document.getElementById("tallyDoorHotspot");
+
+      if (painting) {
+        painting.addEventListener("click", () => {
+          if (gameState.location === "Talleyrand") {
+            performAction("talleyrand_painting");
+          }
+        });
+      }
+
+      if (bar) {
+        bar.addEventListener("click", () => {
+          if (gameState.location === "Talleyrand") {
+            performAction("talleyrand_beer");
+          }
+        });
+      }
+
+      if (snacks) {
+        snacks.addEventListener("click", () => {
+          if (gameState.location === "Talleyrand") {
+            performAction("talleyrand_pretzels");
+          }
+        });
+      }
+
+      if (door) {
+        door.addEventListener("click", () => {
+          if (gameState.location === "Talleyrand") {
+            gameState.location = "Stockport Road";
+            addLog("You head to Stockport Road.");
+            if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
+              maybeRandomEvent();
+            }
+            render();
+          }
+        });
+      }
+    }
+
+    // Painting overlay close
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
+    // Initialise hotspots
+    initTalleyrandHotspots();
+
+    // START BUTTON HANDLER
     startButton.addEventListener("click", () => {
       titleScreen.style.display = "none";
       gameContainer.style.display = "flex";
 
       applyMuteState();
-      stopAllAudio();
+      stopAllAudio(); // stop anything leftover just in case
 
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
-      themeAudio.addEventListener("ended", () => {
-        playAmbienceForLocation(gameState.location);
-      }, { once: true });
-
+      themeAudio.muted = isMuted;
       themeAudio.play().catch(() => {
-        playAmbienceForLocation(gameState.location);
+        console.warn("Theme autoplay blocked even after Start click.");
       });
+
+      // When theme ends, ambience should take over based on location
+      themeAudio.addEventListener("ended", () => {
+        playAmbientForLocation(gameState.location);
+      }, { once: true });
     });
   </script>
 </body>
