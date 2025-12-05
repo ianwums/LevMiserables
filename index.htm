@@ -58,7 +58,6 @@
       transition: background 0.2s ease, color 0.2s ease;
     }
 
-    /* Title screen */
     #titleScreen {
       position: fixed;
       inset: 0;
@@ -94,11 +93,9 @@
       background: #fff176;
     }
 
-    /* Game container wrapper (hidden until Start) */
     #gameContainer {
       display: none;
       width: 100%;
-      display: flex;
       justify-content: center;
       align-items: flex-start;
     }
@@ -187,7 +184,6 @@
       color: #111;
     }
 
-    /* Environment image (used for Talleyrand etc.) */
     .env-image-container {
       width: 320px;
       height: 200px;
@@ -196,7 +192,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background: #000;
-      display: none; /* shown only when we have an image for the current location */
+      display: none;
     }
 
     .env-image-container img {
@@ -213,7 +209,6 @@
       margin-bottom: 10px;
     }
 
-    /* Guinness pints in The Union */
     .pints-container {
       display: flex;
       gap: 6px;
@@ -229,38 +224,31 @@
       transition: opacity 0.4s ease;
     }
 
-    .karaoke-screen {
-      display: none;
-      width: 100%;
-      max-width: 260px;
-      aspect-ratio: 1 / 1;
-      background: #ffeb3b;
-      color: #0d47a1;
-      border-radius: 8px;
-      border: 2px solid var(--border);
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 700;
-      padding: 10px;
-    }
-
+    .karaoke-screen,
     .football-screen {
       display: none;
       width: 100%;
       max-width: 260px;
       aspect-ratio: 1 / 1;
-      background: #1b5e20;
-      color: #ffffff;
       border-radius: 8px;
       border: 2px solid var(--border);
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 0.9rem;
-      font-weight: 700;
       padding: 10px;
+      font-weight: 700;
+    }
+
+    .karaoke-screen {
+      background: #ffeb3b;
+      color: #0d47a1;
+      font-size: 1.4rem;
+    }
+
+    .football-screen {
+      background: #1b5e20;
+      color: #ffffff;
+      font-size: 0.9rem;
       position: relative;
     }
 
@@ -327,23 +315,7 @@
       box-shadow: none;
     }
 
-    .karaoke-choices {
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px dashed var(--border);
-      background: rgba(255,255,255,0.6);
-      display: none;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 0.85rem;
-    }
-
-    .karaoke-choices-title {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
+    .karaoke-choices,
     .talleyrand-beer-choices {
       margin-bottom: 10px;
       padding: 10px;
@@ -356,6 +328,7 @@
       font-size: 0.85rem;
     }
 
+    .karaoke-choices-title,
     .talleyrand-beer-choices-title {
       font-weight: 600;
       margin-bottom: 4px;
@@ -431,7 +404,6 @@
       margin-bottom: 2px;
     }
 
-    /* Full-screen overlays */
     .censored-overlay,
     .death-overlay,
     .painting-overlay {
@@ -455,7 +427,6 @@
       text-align: center;
     }
 
-    /* Painting overlay contents */
     .painting-content {
       max-width: 90vw;
       max-height: 90vh;
@@ -502,12 +473,8 @@
     }
 
     @media (max-width: 800px) {
-      .layout {
-        flex-direction: column;
-      }
-      .log {
-        max-height: 200px;
-      }
+      .layout { flex-direction: column; }
+      .log { max-height: 200px; }
       .overlay-text {
         font-size: 2rem;
         letter-spacing: 0.1em;
@@ -523,7 +490,6 @@
       }
     }
 
-    /* Big red Taccy Vom button */
     .taccy-button {
       background: #b71c1c;
       border-color: #ef5350;
@@ -549,14 +515,11 @@
   </style>
 </head>
 <body>
-
-  <!-- TITLE SCREEN -->
   <div id="titleScreen">
     <h1>LEV MISERABLES<br/>- A Drinking Game</h1>
     <button id="startButton">Begin</button>
   </div>
 
-  <!-- MAIN GAME WRAPPER (HIDDEN UNTIL START) -->
   <div id="gameContainer">
     <div class="game-container">
       <div class="header-row">
@@ -580,10 +543,8 @@
         <div class="main-panel">
           <div id="gameOverBanner" class="game-over-banner">GAME OVER</div>
 
-          <!-- ASCII map / description art -->
           <pre id="asciiArt" class="ascii-art"></pre>
 
-          <!-- Environment pixel image (e.g. Talleyrand bar) -->
           <div id="envImageContainer" class="env-image-container">
             <img id="envImage" src="" alt="">
           </div>
@@ -593,17 +554,12 @@
             <div id="footballScreen" class="football-screen"></div>
           </div>
 
-          <!-- Guinness pints in The Union -->
           <div id="pintsContainer" class="pints-container"></div>
 
           <div id="description" class="description"></div>
 
-          <!-- Karaoke choices ABOVE normal choices -->
           <div id="karaokeChoices" class="karaoke-choices"></div>
-
-          <!-- Talleyrand beer choices -->
           <div id="talleyrandBeerChoices" class="talleyrand-beer-choices"></div>
-
           <div id="choices" class="choices"></div>
         </div>
 
@@ -612,7 +568,6 @@
           <div class="log-title">Action Log</div>
           <div id="log" class="log"></div>
           <div class="hint">Press 1–9 to choose an option.</div>
-
           <div class="summary">
             <div class="summary-title">Session Summary</div>
             <ul class="summary-list" id="sessionSummary"></ul>
@@ -622,19 +577,16 @@
     </div>
   </div>
 
-  <!-- Taccy Vom / Sam Smiths overlay -->
   <div id="censoredOverlay" class="censored-overlay">
     <div id="censoredText" class="overlay-text">CENSORED</div>
   </div>
 
-  <!-- Death overlay -->
   <div id="deathOverlay" class="death-overlay">
     <div class="overlay-text">
       YOU DIED - THE PENALTY FOR LEAVING LEVENSHULME IS TO BE HUNG BY THE NECK UNTIL YOU ARE DEAD
     </div>
   </div>
 
-  <!-- Painting overlay -->
   <div id="paintingOverlay" class="painting-overlay">
     <div class="painting-content">
       <img
@@ -653,17 +605,11 @@
   </div>
 
   <script>
-    // --- AUDIO SETUP ---
-
-    // THEME AUDIO FOR TITLE SCREEN
     const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
     themeAudio.loop = false;
     themeAudio.volume = 1.0;
 
-    // Global mute state
     let isMuted = false;
-
-    // Karaoke audio (for current song, if any)
     let currentKaraokeAudio = null;
 
     const titleScreen = document.getElementById("titleScreen");
@@ -671,26 +617,20 @@
     const gameContainer = document.getElementById("gameContainer");
     const muteButton = document.getElementById("muteButton");
 
-    // Apply mute/unmute to all audio we manage
     function applyMuteState() {
       themeAudio.muted = isMuted;
-      if (currentKaraokeAudio) {
-        currentKaraokeAudio.muted = isMuted;
-      }
+      if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
     }
 
-    // Stop and reset all playing audio
     function stopAllAudio() {
       themeAudio.pause();
       themeAudio.currentTime = 0;
-
       if (currentKaraokeAudio) {
         currentKaraokeAudio.pause();
         currentKaraokeAudio.currentTime = 0;
       }
     }
 
-    // Wire up the mute button
     if (muteButton) {
       muteButton.addEventListener("click", () => {
         isMuted = !isMuted;
@@ -699,7 +639,6 @@
       });
     }
 
-    // --- GAME STATE ---
     const gameState = {
       location: "Stockport Road",
       hasCash: false,
@@ -722,7 +661,7 @@
       antiquesChosen: [],
       antiquesRoundComplete: false,
       diedByLeavingLevy: false,
-      unionPints: [],              // Guinness pints in The Union
+      unionPints: [],
       talleyrandChoosingBeer: false
     };
 
@@ -737,7 +676,6 @@
       "QUEEN (FEAT DAVID BOWIE) - UNDER PRESSURE"
     ];
 
-    // Talleyrand beer options
     const talleyrandBeers = [
       "A pint of Best Bitter",
       "A hazy New England IPA",
@@ -812,14 +750,9 @@
       );
     }
 
-    // --- DRUNK HELPERS ---
     function checkDrunkState() {
-      if (gameState.drunk >= 5) {
-        addLog("You are feeling tipsy, it might be time to eat something");
-      }
-      if (gameState.drunk >= 10 && gameState.location !== "Home") {
-        blackoutToBed();
-      }
+      if (gameState.drunk >= 5) addLog("You are feeling tipsy, it might be time to eat something");
+      if (gameState.drunk >= 10 && gameState.location !== "Home") blackoutToBed();
     }
 
     function setDrunk(newValue) {
@@ -828,13 +761,10 @@
     }
 
     function changeDrunk(delta) {
-      if (delta > 0) {
-        gameState.drinksCount += 1;
-      }
+      if (delta > 0) gameState.drinksCount += 1;
       setDrunk(gameState.drunk + delta);
     }
 
-    // Satiation cap check: any food except Quorn nuggies
     function canEatMore() {
       if (gameState.satiation >= 10) {
         addLog("There is absolutely no way you are still hungry!");
@@ -843,7 +773,6 @@
       return true;
     }
 
-    // Queue log lines with a delay; optional per-line callback
     function queueLogEvents(lines, delayMs, onComplete, onEach) {
       let i = 0;
       function next() {
@@ -861,7 +790,6 @@
       next();
     }
 
-    // --- WORLD / LOCATIONS ---
     const locations = {
       "Stockport Road": {
         ascii: String.raw`
@@ -1113,7 +1041,7 @@
       },
 
       "Home": {
-        ascii: "", // decided in render()
+        ascii: "",
         description: "You finally make it home. A large cat eyes you hungrily. The night in Levenshulme fades into a fuzzy memory.",
         actions: [
           { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
@@ -1160,19 +1088,10 @@
    the night goes on without you.
     `;
 
-    // --- MATCH SIMULATION WITH TV ---
     function simulateMatch() {
       const derbies = [
-        {
-          home: "Manchester United",
-          away: "Everton",
-          name: "The Sherbets Derby"
-        },
-        {
-          home: "Manchester United",
-          away: "Aston Villa",
-          name: "The Scrumpuss Derby"
-        }
+        { home: "Manchester United", away: "Everton", name: "The Sherbets Derby" },
+        { home: "Manchester United", away: "Aston Villa", name: "The Scrumpuss Derby" }
       ];
 
       const derby = derbies[randInt(0, derbies.length - 1)];
@@ -1215,31 +1134,29 @@
         lines.push(`Second half: GOAL for ${teamName}! ${scorer} finds the net.`);
       });
 
-      if (homeTotal === awayTotal) {
-        if (Math.random() < 0.6) {
-          wentToET = true;
-          const etHome = randInt(0, 2);
-          const etAway = randInt(0, 2);
-          const beforeETHome = homeTotal;
-          const beforeETAway = awayTotal;
+      if (homeTotal === awayTotal && Math.random() < 0.6) {
+        wentToET = true;
+        const etHome = randInt(0, 2);
+        const etAway = randInt(0, 2);
+        const beforeETHome = homeTotal;
+        const beforeETAway = awayTotal;
 
-          for (let i = 0; i < etHome; i++) etGoals.push({ team: "home" });
-          for (let i = 0; i < etAway; i++) etGoals.push({ team: "away" });
-          etGoals.sort(() => Math.random() - 0.5);
+        for (let i = 0; i < etHome; i++) etGoals.push({ team: "home" });
+        for (let i = 0; i < etAway; i++) etGoals.push({ team: "away" });
+        etGoals.sort(() => Math.random() - 0.5);
 
-          homeTotal += etHome;
-          awayTotal += etAway;
+        homeTotal += etHome;
+        awayTotal += etAway;
 
-          lines.push(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
+        lines.push(`After 90 minutes it's still level at ${derby.home} ${beforeETHome}–${beforeETAway} ${derby.away}. It goes to extra time.`);
 
-          etGoals.forEach((g) => {
-            const teamName = g.team === "home" ? derby.home : derby.away;
-            const scorer = randomScorer(teamName);
-            lines.push(`Extra time: GOAL for ${teamName}! ${scorer} might have won it.`);
-          });
+        etGoals.forEach((g) => {
+          const teamName = g.team === "home" ? derby.home : derby.away;
+          const scorer = randomScorer(teamName);
+          lines.push(`Extra time: GOAL for ${teamName}! ${scorer} might have won it.`);
+        });
 
-          lines.push(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
-        }
+        lines.push(`After extra time: ${derby.home} ${homeTotal}–${awayTotal} ${derby.away}.`);
       }
 
       let homePens = 0;
@@ -1282,7 +1199,6 @@
         lines.push("Everton win! Potts is elated and announces he's off home to roast a chicken.");
       } else if (winner === "Manchester United") {
         lines.push("Manchester United win! The Devil is in his element and buys you a Guinness.");
-        // Award a Guinness visually + drunk up if you're in The Union
         awardUnionGuinnessFromDevil();
       } else if (winner === "Aston Villa") {
         lines.push("Aston Villa win! Your wife turns up at The Union and buys you a Guinness.");
@@ -1313,12 +1229,8 @@
       );
     }
 
-    // When Devil/wife buys you a Guinness after a match
     function awardUnionGuinnessFromDevil() {
-      // We only show the pints if you're actually in The Union,
-      // but the drink count & drunkness still apply regardless.
       changeDrunk(2);
-
       if (gameState.location === "The Union") {
         gameState.unionPints.push({ state: "full" });
         const thisIndex = gameState.unionPints.length - 1;
@@ -1332,27 +1244,21 @@
       }
     }
 
-    // --- RANDOM EVENTS ---
     function maybeRandomEvent() {
-      if (gameState.location === "Home") return;
-      if (gameState.location === "Levenshulme Antiques Market") return;
+      if (gameState.location === "Home" || gameState.location === "Levenshulme Antiques Market") return;
 
       const roll = Math.random();
       const current = gameState.location;
 
-      // Devil to The Union (unchanged)
       if (roll < 0.05 && current !== "The Union") {
         addLog("You bump into The Devil, who grins and steers you firmly towards The Union.");
         gameState.location = "The Union";
         render();
-      }
-      // Potts to Levy Bakery, made rarer (about 30% of previous 5% band)
-      else if (roll >= 0.05 && roll < 0.065 && current !== "Levy Bakery") {
+      } else if (roll >= 0.05 && roll < 0.065 && current !== "Levy Bakery") {
         addLog("You run into Potts, who insists you accompany him directly to Levy Bakery.");
         gameState.location = "Levy Bakery";
         render();
-      }
-      else if (roll < 0.15) {
+      } else if (roll < 0.15) {
         addLog("Your phone buzzes: your wife messages asking you to buy Quorn chicken nuggies.");
         gameState.wifeWantsQuorn = true;
       } else if (roll < 0.20 && current !== "The Union") {
@@ -1363,7 +1269,6 @@
       }
     }
 
-    // --- BLACKOUT LOGIC ---
     function blackoutToBed() {
       gameState.drunk = 10;
       gameState.location = "Home";
@@ -1371,7 +1276,6 @@
       addLog("You have only fragments of the evening, but at least you made it home.");
     }
 
-    // --- KARAOKE FLOW ---
     function startKaraokeSongSelection() {
       if (gameState.location !== "The Union") return;
       gameState.karaokeChoosingSong = true;
@@ -1426,7 +1330,6 @@
           setTimeout(finishSong, 5000);
         });
       } else {
-        // Default behaviour for other songs: 5 second display, no audio
         setTimeout(() => {
           screen.style.display = "none";
           const crowdLikesIt = Math.random() < 0.5;
@@ -1440,7 +1343,6 @@
       }
     }
 
-    // --- Talleyrand Beer Selection ---
     function startTalleyrandBeerSelection() {
       if (gameState.location !== "Talleyrand") return;
       gameState.talleyrandChoosingBeer = true;
@@ -1455,7 +1357,6 @@
       render();
     }
 
-    // --- GENERIC FULL-SCREEN MESSAGE OVERLAY (CENSORED / SAM SMITHS) ---
     function showOverlayMessage(text, durationMs, callback) {
       const overlay = document.getElementById("censoredOverlay");
       const label = document.getElementById("censoredText");
@@ -1468,7 +1369,6 @@
       }, durationMs);
     }
 
-    // --- TACCY VOM VOM ---
     function doTaccyVomVom() {
       showOverlayMessage("CENSORED", 3000, () => {
         addLog("That was disgusting! But at least we can eat something now.");
@@ -1477,7 +1377,6 @@
       });
     }
 
-    // --- LEAVE LEVENSHULME (YOU DIED) ---
     function leaveLevenshulme() {
       const overlay = document.getElementById("deathOverlay");
       overlay.style.display = "flex";
@@ -1492,7 +1391,6 @@
       }, 7000);
     }
 
-    // --- ANTIQUES MINI-GAME ---
     function pickAntique(index) {
       if (gameState.location !== "Levenshulme Antiques Market") return;
 
@@ -1529,34 +1427,27 @@
         gameState.hasCash = true;
       } else {
         addLog(`At auction, your ${first} and ${second} fall flat. You make a painful loss and a new enemy in the trade.`);
-        if (gameState.hasCash) {
-          gameState.hasCash = false;
-        }
+        if (gameState.hasCash) gameState.hasCash = false;
       }
 
       gameState.antiquesRoundComplete = true;
     }
 
-    // --- Painting Overlay ---
     function showPainting() {
-      const overlay = document.getElementById("paintingOverlay");
-      overlay.style.display = "flex";
+      document.getElementById("paintingOverlay").style.display = "flex";
     }
 
     function hidePainting() {
       document.getElementById("paintingOverlay").style.display = "none";
     }
 
-    // --- ACTION HANDLERS ---
     function performAction(actionId) {
       switch (actionId) {
-        // UNION
         case "union_guinness": {
           const decorations = ["heart", "musical note", "shamrock"];
           const decoration = pickRandom(decorations);
           addLog(`Magz hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
           changeDrunk(2);
-
           gameState.unionPints.push({ state: "full" });
           const thisIndex = gameState.unionPints.length - 1;
           render();
@@ -1566,7 +1457,6 @@
             pint.state = "empty";
             render();
           }, 3000);
-
           break;
         }
         case "union_karaoke":
@@ -1609,7 +1499,6 @@
           changeDrunk(-1);
           break;
 
-        // NISPY
         case "nispy_meal":
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
@@ -1626,7 +1515,6 @@
           addLog("The staff glare and say, 'The food is salty enough already, NO WAY!'");
           break;
 
-        // ISCA
         case "isca_fizz":
           addLog("You sip a glass of fizz and briefly consider moving to Paris.");
           changeDrunk(1);
@@ -1647,7 +1535,6 @@
           changeDrunk(-2);
           break;
 
-        // LEVY BAKERY
         case "levy_mixed":
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
@@ -1677,7 +1564,6 @@
           }
           break;
 
-        // TESCO
         case "tesco_kitchen_roll":
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
@@ -1693,7 +1579,6 @@
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
-        // ATM
         case "atm_insert_card":
           if (!gameState.hasCard && !gameState.cardInMachine) {
             addLog("You pat your pockets. No card. Perhaps the ATM already claimed it earlier.");
@@ -1732,17 +1617,14 @@
           }
           break;
 
-        // TACCY VOM VOM
         case "taccy_vom_vom":
           doTaccyVomVom();
           break;
 
-        // LEAVE LEVENSHULME
         case "leave_levenshulme":
           leaveLevenshulme();
           return;
 
-        // TALLEYRAND
         case "talleyrand_painting":
           showPainting();
           break;
@@ -1757,7 +1639,6 @@
           changeDrunk(-1);
           break;
 
-        // BLUEBELL
         case "bluebell_beer":
           addLog("You buy a beer. Mark gives a curt nod.");
           changeDrunk(2);
@@ -1817,7 +1698,6 @@
           );
           break;
 
-        // ANTIQUES
         case "antiques_1":
           pickAntique(0);
           break;
@@ -1834,13 +1714,11 @@
           pickAntique(4);
           break;
 
-        // END OF NIGHT
         case "end_night":
           endNight();
           render();
           return;
 
-        // RESTART
         case "restart_game":
           window.location.reload();
           return;
@@ -1896,7 +1774,6 @@
       }
     }
 
-    // --- RENDERING ---
     function render() {
       const loc = locations[gameState.location];
 
@@ -1934,7 +1811,6 @@
       statusSatiationEl.textContent = gameState.satiation + " / 10";
       statusScoreEl.textContent = getScore();
 
-      // Wife status banner
       if (gameState.wifeWantsQuorn) {
         wifeStatusEl.textContent = "WIFE ALERT: She is waiting on Quorn chicken nuggies!";
         wifeStatusEl.className = "wife-status-banner active";
@@ -1943,7 +1819,6 @@
         wifeStatusEl.className = "wife-status-banner inactive";
       }
 
-      // GAME OVER banner visibility & text
       if (gameState.location === "Home") {
         if (gameState.wifeWantsQuorn) {
           gameOverBanner.textContent = "GAME OVER YOU FORGOT THE NUGGIES. IT'S D I V O R C E TIME!";
@@ -1955,7 +1830,6 @@
         gameOverBanner.style.display = "none";
       }
 
-      // Home ASCII: house vs gravestone variant
       if (gameState.location === "Home") {
         asciiEl.textContent = gameState.diedByLeavingLevy ? homeGraveAscii : homeHouseAscii;
       } else {
@@ -1964,7 +1838,6 @@
 
       descEl.textContent = loc.description;
 
-      // Environment image logic (currently only Talleyrand)
       envImageContainer.style.display = "none";
       if (gameState.location === "Talleyrand") {
         envImageContainer.style.display = "block";
@@ -1977,7 +1850,6 @@
         }
       }
 
-      // Guinness pints display in The Union
       pintsContainer.innerHTML = "";
       if (gameState.location === "The Union") {
         gameState.unionPints.forEach(pint => {
@@ -1990,7 +1862,6 @@
         });
       }
 
-      // Karaoke song list
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
         karaokeChoicesEl.style.display = "flex";
@@ -2009,7 +1880,6 @@
         karaokeChoicesEl.style.display = "none";
       }
 
-      // Talleyrand beer list
       beerChoicesEl.innerHTML = "";
       if (gameState.talleyrandChoosingBeer && gameState.location === "Talleyrand") {
         beerChoicesEl.style.display = "flex";
@@ -2028,11 +1898,9 @@
         beerChoicesEl.style.display = "none";
       }
 
-      // Choices
       choicesEl.innerHTML = "";
       let actionsToShow = [...loc.actions];
 
-      // Conditionally add Taccy Vom Vom option (global special) at the TOP
       if (
         gameState.location !== "Home" &&
         gameState.satiation === 10 &&
@@ -2048,14 +1916,11 @@
       actionsToShow.forEach((action, index) => {
         const btn = document.createElement("button");
         btn.textContent = (index + 1) + ". " + action.label;
-        if (action.id === "taccy_vom_vom") {
-          btn.classList.add("taccy-button");
-        }
+        if (action.id === "taccy_vom_vom") btn.classList.add("taccy-button");
         btn.addEventListener("click", () => handleChoice(actionsToShow, index));
         choicesEl.appendChild(btn);
       });
 
-      // Full history, latest at the top; top entry bold
       logEl.innerHTML = "";
       const allEntries = [...gameState.log].reverse();
       allEntries.forEach((entry, idx) => {
@@ -2072,7 +1937,6 @@
       });
       logEl.scrollTop = 0;
 
-      // Session summary
       summaryEl.innerHTML = "";
       const items = [
         `Drinks consumed (including shots, pints, etc): ${gameState.drinksCount}`,
@@ -2119,9 +1983,6 @@
           gameState.antiquesRoundComplete = false;
         }
 
-        // NOTE: we no longer clear unionPints when leaving The Union,
-        // so they persist across returns.
-
         gameState.location = action.target;
         addLog("You head to " + action.target + ".");
         if (gameState.location !== "Home" && gameState.location !== "Levenshulme Antiques Market") {
@@ -2137,7 +1998,6 @@
       gameState.log.push(text);
     }
 
-    // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
       const choiceIndex = parseInt(event.key, 10) - 1;
@@ -2160,10 +2020,8 @@
       handleChoice(actionsToShow, choiceIndex);
     });
 
-    // Painting overlay close
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
-    // START BUTTON HANDLER
     startButton.addEventListener("click", () => {
       titleScreen.style.display = "none";
       gameContainer.style.display = "flex";
