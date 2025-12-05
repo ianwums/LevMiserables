@@ -552,8 +552,8 @@
 
   <!-- TITLE SCREEN -->
   <div id="titleScreen">
-    <h1>LEV MISERABLES<br/>A Drinking Game</h1>
-    <button id="startButton">Start</button>
+    <h1>LEV MISERABLES<br/>- A Drinking Game</h1>
+    <button id="startButton">Begin</button>
   </div>
 
   <!-- MAIN GAME WRAPPER (HIDDEN UNTIL START) -->
@@ -568,12 +568,12 @@
       </div>
 
       <div class="status-bar">
-        <div><strong>Location:</strong> <span id="statusLocation"></span></div>
-        <div><strong>Cash:</strong> <span id="statusCash"></span></div>
-        <div><strong>Bank Card:</strong> <span id="statusCard"></span></div>
-        <div><strong>Drunk:</strong> <span id="statusDrunk"></span></div>
+        <div><strong>Current location:</strong> <span id="statusLocation"></span></div>
+        <div><strong>Cash in wallet?</strong> <span id="statusCash"></span></div>
+        <div><strong>Bank card:</strong> <span id="statusCard"></span></div>
+        <div><strong>Inebriation:</strong> <span id="statusDrunk"></span></div>
         <div><strong>Satiation:</strong> <span id="statusSatiation"></span></div>
-        <div><strong>Score:</strong> <span id="statusScore"></span></div>
+        <div><strong>Total score:</strong> <span id="statusScore"></span></div>
       </div>
 
       <div class="layout">
@@ -646,7 +646,7 @@
       <div id="paintingCaption" class="painting-caption">
         Pieter Bruegel the Elder: Peasant Dance c. 1568 (probably).<br/>
         A village feast in full swing: dancers in the lane, drinkers by the tavern,
-        and the church watching from a distance.
+        and the church watching from a distance. A half familiar melody rings out at an ever more intense pace!
       </div>
       <button id="paintingClose" class="painting-close">Close painting</button>
     </div>
@@ -815,7 +815,7 @@
     // --- DRUNK HELPERS ---
     function checkDrunkState() {
       if (gameState.drunk >= 5) {
-        addLog("You are feeling tipsy, might it be time to eat something?");
+        addLog("You are feeling tipsy, it might be time to eat something");
       }
       if (gameState.drunk >= 10 && gameState.location !== "Home") {
         blackoutToBed();
@@ -866,16 +866,14 @@
       "Stockport Road": {
         ascii: String.raw`
 
-   It's late on Stockport Road. Headlights smear through drizzle; shopfronts glow
-   in neon and sodium. You can see:
+   It's early evening on Stockport Road. The conditions are perfect, anything could happen! You can see:
 
           [ ISCA ]       [ UNION ]       [ LEVY BAKERY ]
           [ NISPY ]      [ TESCO ]       [ ATM ]
           [ TALLEYRAND ] [ BLUEBELL ]    [ ANTIQUES ]
 
-   Somewhere between glory and shame, you must choose your route.
-        `,
-        description: "You stand on Stockport Road, poised between greatness and questionable decisions. Where to first?",
+           `,
+        description: "Right, where are we off to?",
         actions: [
           { label: "Go to The Union", type: "move", target: "The Union" },
           { label: "Go to Nispy", type: "move", target: "Nispy" },
@@ -896,17 +894,17 @@
            ______________________________________
           |   THE UNION                         |
           |-------------------------------------|
-          |  █████  █████  █████   TV: ⚽       |
-          |  █   █  █   █  █   █                |
-          |  █   █  █   █  █   █   ♪ KARAOKE ♪ |
           |                                     |
-          |   [ BAR ]          [ STICKY FLOOR ] |
+          |                                     |
+          |                                     |
+          |                                     |
+          |                                     |
           |_____________________________________|
 
-   The pub is loud but comforting. Condensation on windows, pints on every table,
-   and Rockin Ronnie guarding the karaoke queue like a dragon.
+   The Union is busy but cosy. Pints on every table, Julie is propping up the bar
+   and Rockin Ronnie has fired up the Karaoke machine.
         `,
-        description: "Sticky carpet, familiar faces, and the comforting whiff of spilt Guinness. Rockin Ronnie is queueing up karaoke.",
+        description: "Well?",
         actions: [
           { label: "Order a pint of Guinness", type: "action", id: "union_guinness" },
           { label: "Sing a song on karaoke", type: "action", id: "union_karaoke" },
@@ -932,7 +930,7 @@
                |___________|_________________|
 
    Heat lamps glow amber over trays of fried chicken. The air is thick with oil,
-   spice, and half-shouted orders.
+   spice, and half-shouted orders. A bald bearded man sits sweating and hiccuping uncontrollably.
         `,
         description: "The warm glow of the heat lamps. The smell of fried everything. A man in front of you is arguing about sauce.",
         actions: [
@@ -956,9 +954,9 @@
             |__________________________|
 
    Natural wine bottles line the wall, each with a label more abstract than last.
-   Someone at the bar is saying 'skin contact' a suspicious amount.
+   Someone at the bar is saying 'skin contact' a suspicious amount. 
         `,
-        description: "Soft lighting, clinking glasses, and someone saying the word 'minerality' unironically.",
+        description: "You feel your wallet shudder.",
         actions: [
           { label: "Order a glass of fizz", type: "action", id: "isca_fizz" },
           { label: "Order a glass of red", type: "action", id: "isca_red" },
@@ -971,7 +969,7 @@
       "Levy Bakery": {
         ascii: String.raw`
             _________________________________
-           |        LEVY BAKERY (SAMOON)     |
+           |        LEVY BAKERY              |
            |---------------------------------|
            |  OVEN: 🔥🔥🔥      GRILL: ▓▓▓  |
            |                                 |
@@ -984,7 +982,7 @@
    The warmth hits you as you step in: fresh bread, grilling meat, sesame and spice.
    This is where nights are anchored and redeemed.
         `,
-        description: "The counter is lined with glorious Samoon bread. The grill sizzles. This is the point of no return.",
+        description: "The counter is lined with glorious Samoon bread. The grill sizzles. You eye up the green chilli sauce, knowing it is for some reason forbidden",
         actions: [
           { label: "Order a mixed Samoon", type: "action", id: "levy_mixed" },
           { label: "Order a Falafel Samoon", type: "action", id: "levy_falafel" },
@@ -1005,9 +1003,9 @@
               |___________________________|
 
    Fluorescent lighting hums overhead. Baskets clatter, scanners beep, and
-   everyone is pretending not to read the meal deal options for the fourth time.
+   everyone is wishing this was a Sainsburys Local.
         `,
-        description: "Fluorescent lighting, aisles of mild chaos, and a queue of people buying exactly three items.",
+        description: "You awkwardly squeeze past everyone waiting for the single self checkout that takes cash",
         actions: [
           { label: "Buy kitchen roll", type: "action", id: "tesco_kitchen_roll" },
           { label: "Buy Quorn chicken nuggies", type: "action", id: "tesco_quorn" },
@@ -1028,7 +1026,7 @@
           |   card slot  ⬛     |
           |____________________|
 
-   The ATM glows against the dark, a shrine to reckless financial decisions.
+   The ATM glows against the dark, ready to offer pet and life insurance policies to anyone and everyone.
         `,
         description: "A lonely ATM hums softly, ready to enable more questionable purchases.",
         actions: [
@@ -1054,7 +1052,7 @@
    A cosy bar filled with art and the low murmur of conversations that may or may
    not be about Marxism.
         `,
-        description: "Soft lights, framed paintings and the sense that everyone else here has a PhD in something obscure.",
+        description: "Soft lights, framed paintings, a death mask and posters for all manner of weird club nights.",
         actions: [
           { label: "Look at Painting", type: "action", id: "talleyrand_painting" },
           { label: "Buy a beer", type: "action", id: "talleyrand_beer" },
@@ -1095,7 +1093,7 @@
              _________________________________
             | LEVENSHULME ANTIQUES MARKET    |
             |--------------------------------|
-            |  trestle tables piled high     |
+            |  Rooms          piled high     |
             |  with curios, clocks, lamps,   |
             |  and things that might be art. |
             |________________________________|
@@ -1116,7 +1114,7 @@
 
       "Home": {
         ascii: "", // decided in render()
-        description: "You finally make it home. A small cat eyes you knowingly. The night in Levenshulme fades into a fuzzy memory.",
+        description: "You finally make it home. A large cat eyes you hungrily. The night in Levenshulme fades into a fuzzy memory.",
         actions: [
           { label: "Restart Lev Miserables", type: "action", id: "restart_game" }
         ]
@@ -1154,11 +1152,11 @@
                 |   /  LIES     \      |
                 |   |  A FOOL   |      |
                 |   | WHO LEFT  |      |
-                |   | LEVENS.   |      |
+                |   | LEVENS.    |      |
                 |   |__________ |      |
                 |______________________|
 
-   The streetlights flicker in the distance. Somewhere back on Stockport Road,
+   Streetlights flicker in the distance. Somewhere back on Stockport Road,
    the night goes on without you.
     `;
 
@@ -1556,7 +1554,7 @@
         case "union_guinness": {
           const decorations = ["heart", "musical note", "shamrock"];
           const decoration = pickRandom(decorations);
-          addLog(`Mary hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
+          addLog(`Magz hands you a pint of Guinness decorated with a ${decoration}. It's oddly emotional.`);
           changeDrunk(2);
 
           gameState.unionPints.push({ state: "full" });
