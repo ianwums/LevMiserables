@@ -96,7 +96,6 @@
     #gameContainer {
       display: none;
       width: 100%;
-      justify-content:中心;
       justify-content: center;
       align-items: flex-start;
     }
@@ -607,24 +606,26 @@
   <script>
     // --- AUDIO SETUP ---
 
-    // Intro / title theme
-    const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
+    const AUDIO_BASE = "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/";
+
+    // Intro theme
+    const themeAudio = new Audio(AUDIO_BASE + "lev_mis_theme.mp3");
     themeAudio.loop = false;
     themeAudio.volume = 1.0;
 
-    // Location ambience (fill in with your actual filenames if different)
+    // Location ambience – now using your exact filenames
     const ambienceAudio = {
-      "Stockport Road": new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/stockport_road_ambience.mp3"),
-      "The Union":      new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/the_union_ambience.mp3"),
-      "Nispy":          new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/nispy_ambience.mp3"),
-      "Isca":           new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/isca_ambience.mp3"),
-      "Levy Bakery":    new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/levy_bakery_ambience.mp3"),
-      "Tesco":          new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/tesco_ambience.mp3"),
-      "ATM":            new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/atm_ambience.mp3"),
-      "Talleyrand":     new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_ambient.mp3"),
-      "Bluebell":       new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/bluebell_ambience.mp3"),
-      "Levenshulme Antiques Market": new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/antiques_market_ambience.mp3"),
-      "Home":           new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/home_ambience.mp3")
+      "Stockport Road": new Audio(AUDIO_BASE + "stockport_road_ambience.mp3"),
+      "The Union":      new Audio(AUDIO_BASE + "union_ambience.mp3"),
+      "Nispy":          new Audio(AUDIO_BASE + "nispy_kitchen.mp3"),
+      "Isca":           new Audio(AUDIO_BASE + "isca_bar.mp3"),
+      "Levy Bakery":    new Audio(AUDIO_BASE + "levy_bakery_grill.mp3"),
+      "Tesco":          new Audio(AUDIO_BASE + "tesco_nightshop.mp3"),
+      "ATM":            new Audio(AUDIO_BASE + "atm_street_corner.mp3"),
+      "Talleyrand":     new Audio(AUDIO_BASE + "talleyrand_bar.mp3"),
+      "Bluebell":       new Audio(AUDIO_BASE + "bluebell_pub.mp3"),
+      "Levenshulme Antiques Market": new Audio(AUDIO_BASE + "antiques_market_floor.mp3"),
+      "Home":           new Audio(AUDIO_BASE + "home_quiet_night.mp3")
     };
 
     Object.values(ambienceAudio).forEach(a => { a.loop = true; });
@@ -633,52 +634,46 @@
 
     // Talleyrand beer-taps song (grog)
     const talleyrandGrogsongAudio = new Audio(
-      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_grogsong.mp3"
+      AUDIO_BASE + "talleyrand_grogsong.mp3"
     );
     talleyrandGrogsongAudio.loop = true;
 
     // Talleyrand painting music
     const talleyrandPaintingAudio = new Audio(
-      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_peasant_dance_music_full_length.mp3"
+      AUDIO_BASE + "talleyrand_peasant_dance_music_full_length.mp3"
     );
     talleyrandPaintingAudio.loop = true;
 
-    // Karaoke audio mapping (non–Under Pressure songs)
+    // Karaoke audio mapping – keyed by EXACT song labels from karaokeSongs
     const karaokeAudioSources = {
       "THE SMITHS - GIRLFRIEND IN A COMA":
-        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_girlfriend_in_a_coma.mp3",
+        AUDIO_BASE + "karaoke_girlfriend_in_a_coma.mp3",
       "ROBBIE WILLIAMS - ROCK DJ":
-        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_rock_dj.mp3",
+        AUDIO_BASE + "karaoke_rock_dj.mp3",
+      "BRUCE SPRINGSTEEN - BORN TO RUN":
+        AUDIO_BASE + "karaoke_born_to_run.mp3",
+      "NANCY SINATRA - BOOTS":
+        AUDIO_BASE + "karaoke_boots.mp3",
       "BILLY JOEL - WE DIDN'T START THE FIRE":
-        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_we_didnt_start_the_fire.mp3",
+        AUDIO_BASE + "karaoke_we_didnt_start_the_fire.mp3",
       "RONAN KEATING - ROLLERCOASTER":
-        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_rollercoaster.mp3",
+        AUDIO_BASE + "karaoke_rollercoaster.mp3",
       "DAVID BOWIE - BLACKSTAR":
-        "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_blackstar.mp3"
+        AUDIO_BASE + "karaoke_blackstar.mp3"
+      // NOTE: karaoke_green_light.mp3 exists but no "Green Light" song option yet
     };
 
-    // Under Pressure remains separate
-    const underPressureSrc =
-      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3";
+    const underPressureSrc = AUDIO_BASE + "karaoke_under_pressure.mp3";
 
-    // Karaoke audio (current track)
     let currentKaraokeAudio = null;
-
     let isMuted = false;
 
     function applyMuteState() {
       themeAudio.muted = isMuted;
-
-      Object.values(ambienceAudio).forEach(a => {
-        a.muted = isMuted;
-      });
-
+      Object.values(ambienceAudio).forEach(a => { a.muted = isMuted; });
       talleyrandGrogsongAudio.muted = isMuted;
       talleyrandPaintingAudio.muted = isMuted;
-
-      if (currentKaraokeAudio) {
-        currentKaraokeAudio.muted = isMuted;
-      }
+      if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
     }
 
     function stopAllAudio() {
@@ -1442,12 +1437,10 @@
       render();
 
       const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
-      const key = songTitle.toUpperCase();
-      const mappedSrc = karaokeAudioSources[key];
+      const mappedSrc = karaokeAudioSources[songTitle];
 
-      // For all karaoke with real audio (mapped or Under Pressure),
-      // we stop other audio and resume ambience after.
       if (isUnderPressure || mappedSrc) {
+        // Stop other audio while karaoke runs
         stopAllAudio();
 
         const src = isUnderPressure ? underPressureSrc : mappedSrc;
@@ -1466,7 +1459,7 @@
           setTimeout(handlerFinish, 5000);
         });
       } else {
-        // No dedicated audio for this song: keep the old 5s visual-only behaviour
+        // Fallback: no audio file, just a 5s visual gag
         setTimeout(() => {
           finishKaraoke(screen);
         }, 5000);
@@ -2129,7 +2122,7 @@
       if (!action) return;
 
       if (action.type === "move") {
-        // If leaving Talleyrand while pumps song is playing, stop it
+        // Leaving Talleyrand while grog song is going
         if (currentLocationName === "Talleyrand" && gameState.talleyrandChoosingBeer) {
           stopTalleyrandGrogsong();
           gameState.talleyrandChoosingBeer = false;
@@ -2210,13 +2203,13 @@
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
-      // When theme ends, start ambient for current location
+      // When theme ends, start ambience for current location
       themeAudio.addEventListener("ended", () => {
         playAmbienceForLocation(gameState.location);
       }, { once: true });
 
       themeAudio.play().catch(() => {
-        // If browser blocks theme, just fall back to ambience
+        // If autoplay blocked, fall back straight to ambience
         playAmbienceForLocation(gameState.location);
       });
     });
