@@ -605,31 +605,79 @@
   </div>
 
   <script>
+    // --- AUDIO SETUP ---
+
+    // Title theme
     const themeAudio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/lev_mis_theme.mp3");
     themeAudio.loop = false;
     themeAudio.volume = 1.0;
 
-    let isMuted = false;
+    // New Talleyrand beer-taps song
+    const talleyrandGrogsongAudio = new Audio(
+      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_grogsong.mp3"
+    );
+    talleyrandGrogsongAudio.loop = true;
+
+    // New Talleyrand painting music
+    const talleyrandPaintingAudio = new Audio(
+      "https://levmiserables.s3.eu-north-1.amazonaws.com/audio/talleyrand_peasant_dance_music_full_length.mp3"
+    );
+    talleyrandPaintingAudio.loop = true;
+
+    // Karaoke audio (for current song, if any)
     let currentKaraokeAudio = null;
 
-    const titleScreen = document.getElementById("titleScreen");
-    const startButton = document.getElementById("startButton");
-    const gameContainer = document.getElementById("gameContainer");
-    const muteButton = document.getElementById("muteButton");
+    let isMuted = false;
 
     function applyMuteState() {
       themeAudio.muted = isMuted;
+      talleyrandGrogsongAudio.muted = isMuted;
+      talleyrandPaintingAudio.muted = isMuted;
       if (currentKaraokeAudio) currentKaraokeAudio.muted = isMuted;
     }
 
     function stopAllAudio() {
       themeAudio.pause();
       themeAudio.currentTime = 0;
+
+      talleyrandGrogsongAudio.pause();
+      talleyrandGrogsongAudio.currentTime = 0;
+
+      talleyrandPaintingAudio.pause();
+      talleyrandPaintingAudio.currentTime = 0;
+
       if (currentKaraokeAudio) {
         currentKaraokeAudio.pause();
         currentKaraokeAudio.currentTime = 0;
       }
     }
+
+    function playTalleyrandGrogsong() {
+      talleyrandGrogsongAudio.currentTime = 0;
+      applyMuteState();
+      talleyrandGrogsongAudio.play().catch(() => {});
+    }
+
+    function stopTalleyrandGrogsong() {
+      talleyrandGrogsongAudio.pause();
+      talleyrandGrogsongAudio.currentTime = 0;
+    }
+
+    function playTalleyrandPaintingMusic() {
+      talleyrandPaintingAudio.currentTime = 0;
+      applyMuteState();
+      talleyrandPaintingAudio.play().catch(() => {});
+    }
+
+    function stopTalleyrandPaintingMusic() {
+      talleyrandPaintingAudio.pause();
+      talleyrandPaintingAudio.currentTime = 0;
+    }
+
+    const titleScreen = document.getElementById("titleScreen");
+    const startButton = document.getElementById("startButton");
+    const gameContainer = document.getElementById("gameContainer");
+    const muteButton = document.getElementById("muteButton");
 
     if (muteButton) {
       muteButton.addEventListener("click", () => {
@@ -638,6 +686,8 @@
         muteButton.textContent = isMuted ? "🔇 Unmute" : "🔊 Mute";
       });
     }
+
+    // --- GAME STATE ---
 
     const gameState = {
       location: "Stockport Road",
@@ -1088,6 +1138,8 @@
    the night goes on without you.
     `;
 
+    // --- MATCH SIMULATION ---
+
     function simulateMatch() {
       const derbies = [
         { home: "Manchester United", away: "Everton", name: "The Sherbets Derby" },
@@ -1276,6 +1328,8 @@
       addLog("You have only fragments of the evening, but at least you made it home.");
     }
 
+    // --- KARAOKE ---
+
     function startKaraokeSongSelection() {
       if (gameState.location !== "The Union") return;
       gameState.karaokeChoosingSong = true;
@@ -1302,11 +1356,12 @@
       const isUnderPressure = songTitle.toUpperCase().includes("UNDER PRESSURE");
 
       if (isUnderPressure) {
+        // Stop other global tracks (theme, Talleyrand music, any previous karaoke)
         stopAllAudio();
 
         const audio = new Audio("https://levmiserables.s3.eu-north-1.amazonaws.com/audio/karaoke_under_pressure.mp3");
         currentKaraokeAudio = audio;
-        audio.muted = isMuted;
+        applyMuteState();
 
         const finishSong = () => {
           if (!screen) return;
@@ -1343,10 +1398,14 @@
       }
     }
 
+    // --- TALLEyrand BEER SELECTION ---
+
     function startTalleyrandBeerSelection() {
       if (gameState.location !== "Talleyrand") return;
       gameState.talleyrandChoosingBeer = true;
       addLog("The bartender gestures to the pumps. What are you having?");
+      // Play the beer taps song while the pumps are displayed
+      playTalleyrandGrogsong();
       render();
     }
 
@@ -1354,8 +1413,12 @@
       gameState.talleyrandChoosingBeer = false;
       addLog(`You order ${beerName}. It appears in front of you with impossible efficiency.`);
       changeDrunk(2);
+      // Once you've chosen, stop the pumps song
+      stopTalleyrandGrogsong();
       render();
     }
+
+    // --- OVERLAYS & TACCY VOM ---
 
     function showOverlayMessage(text, durationMs, callback) {
       const overlay = document.getElementById("censoredOverlay");
@@ -1390,6 +1453,8 @@
         render();
       }, 7000);
     }
+
+    // --- ANTIQUES MINI-GAME ---
 
     function pickAntique(index) {
       if (gameState.location !== "Levenshulme Antiques Market") return;
@@ -1433,16 +1498,23 @@
       gameState.antiquesRoundComplete = true;
     }
 
+    // --- PAINTING OVERLAY + MUSIC ---
+
     function showPainting() {
       document.getElementById("paintingOverlay").style.display = "flex";
+      playTalleyrandPaintingMusic();
     }
 
     function hidePainting() {
       document.getElementById("paintingOverlay").style.display = "none";
+      stopTalleyrandPaintingMusic();
     }
+
+    // --- ACTION HANDLING ---
 
     function performAction(actionId) {
       switch (actionId) {
+        // UNION
         case "union_guinness": {
           const decorations = ["heart", "musical note", "shamrock"];
           const decoration = pickRandom(decorations);
@@ -1499,6 +1571,7 @@
           changeDrunk(-1);
           break;
 
+        // NISPY
         case "nispy_meal":
           if (!gameState.hasCash) {
             addLog("You try to order a meal but realise you have no cash. Nispy is not impressed. Hit the ATM first.");
@@ -1515,6 +1588,7 @@
           addLog("The staff glare and say, 'The food is salty enough already, NO WAY!'");
           break;
 
+        // ISCA
         case "isca_fizz":
           addLog("You sip a glass of fizz and briefly consider moving to Paris.");
           changeDrunk(1);
@@ -1535,6 +1609,7 @@
           changeDrunk(-2);
           break;
 
+        // LEVY BAKERY
         case "levy_mixed":
           if (!gameState.hasCash) {
             addLog("You reach for your wallet... empty. The staff kindly suggest you visit the ATM first.");
@@ -1564,6 +1639,7 @@
           }
           break;
 
+        // TESCO
         case "tesco_kitchen_roll":
           addLog("You buy kitchen roll. Responsible, if not glamorous.");
           break;
@@ -1579,6 +1655,7 @@
           gameState.satiation = clamp(gameState.satiation + 1, 0, 10);
           break;
 
+        // ATM
         case "atm_insert_card":
           if (!gameState.hasCard && !gameState.cardInMachine) {
             addLog("You pat your pockets. No card. Perhaps the ATM already claimed it earlier.");
@@ -1617,14 +1694,17 @@
           }
           break;
 
+        // TACCY VOM
         case "taccy_vom_vom":
           doTaccyVomVom();
           break;
 
+        // LEAVE LEVY
         case "leave_levenshulme":
           leaveLevenshulme();
           return;
 
+        // TALLEYRAND
         case "talleyrand_painting":
           showPainting();
           break;
@@ -1639,6 +1719,7 @@
           changeDrunk(-1);
           break;
 
+        // BLUEBELL
         case "bluebell_beer":
           addLog("You buy a beer. Mark gives a curt nod.");
           changeDrunk(2);
@@ -1698,6 +1779,7 @@
           );
           break;
 
+        // ANTIQUES
         case "antiques_1":
           pickAntique(0);
           break;
@@ -1714,11 +1796,13 @@
           pickAntique(4);
           break;
 
+        // END NIGHT
         case "end_night":
           endNight();
           render();
           return;
 
+        // RESTART
         case "restart_game":
           window.location.reload();
           return;
@@ -1773,6 +1857,8 @@
         addLog("You probably should have eaten more than that.");
       }
     }
+
+    // --- RENDERING ---
 
     function render() {
       const loc = locations[gameState.location];
@@ -1862,6 +1948,7 @@
         });
       }
 
+      // Karaoke song list
       karaokeChoicesEl.innerHTML = "";
       if (gameState.karaokeChoosingSong && gameState.location === "The Union") {
         karaokeChoicesEl.style.display = "flex";
@@ -1880,6 +1967,7 @@
         karaokeChoicesEl.style.display = "none";
       }
 
+      // Talleyrand beer list
       beerChoicesEl.innerHTML = "";
       if (gameState.talleyrandChoosingBeer && gameState.location === "Talleyrand") {
         beerChoicesEl.style.display = "flex";
@@ -1898,6 +1986,7 @@
         beerChoicesEl.style.display = "none";
       }
 
+      // Choices
       choicesEl.innerHTML = "";
       let actionsToShow = [...loc.actions];
 
@@ -1921,6 +2010,7 @@
         choicesEl.appendChild(btn);
       });
 
+      // Log
       logEl.innerHTML = "";
       const allEntries = [...gameState.log].reverse();
       allEntries.forEach((entry, idx) => {
@@ -1937,6 +2027,7 @@
       });
       logEl.scrollTop = 0;
 
+      // Session summary
       summaryEl.innerHTML = "";
       const items = [
         `Drinks consumed (including shots, pints, etc): ${gameState.drinksCount}`,
@@ -1960,6 +2051,12 @@
       if (!action) return;
 
       if (action.type === "move") {
+        // If leaving Talleyrand while beer taps music is going, stop it
+        if (currentLocationName === "Talleyrand" && gameState.talleyrandChoosingBeer) {
+          stopTalleyrandGrogsong();
+          gameState.talleyrandChoosingBeer = false;
+        }
+
         gameState.karaokeChoosingSong = false;
 
         if (currentLocationName === "ATM" && gameState.cardInMachine) {
@@ -1998,6 +2095,7 @@
       gameState.log.push(text);
     }
 
+    // Keyboard shortcuts 1–9
     document.addEventListener("keydown", (event) => {
       if (!/^[1-9]$/.test(event.key)) return;
       const choiceIndex = parseInt(event.key, 10) - 1;
@@ -2022,16 +2120,18 @@
 
     document.getElementById("paintingClose").addEventListener("click", hidePainting);
 
+    // START BUTTON HANDLER
     startButton.addEventListener("click", () => {
       titleScreen.style.display = "none";
       gameContainer.style.display = "flex";
 
       applyMuteState();
-      stopAllAudio();
+      stopAllAudio(); // reset any lingering audio just in case
 
       addLog("You step out onto Stockport Road. The night begins.");
       render();
 
+      // Theme music after user gesture -> should be allowed
       themeAudio.play().catch(() => {
         console.warn("Theme autoplay blocked even after Start click.");
       });
